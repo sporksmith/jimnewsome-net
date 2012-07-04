@@ -2,10 +2,10 @@
 #      Main Configs       #
 # ----------------------- #
 
-url: http://yoursite.com
-title: My Octopress Blog
-subtitle: A blogging framework for hackers.
-author: Your Name
+url: http://growing-warrior-1657.herokuapp.com/
+title: Jim's Blog
+subtitle: A work in progress.
+author: Jim Newsome
 simple_search: http://google.com/search
 description:
 
