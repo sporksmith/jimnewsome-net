@@ -5,7 +5,10 @@ date: 2012-08-09 21:04
 comments: true
 sharing: true
 footer: true
+toc: true
 ---
+
+<div class="entry-content" markdown="1">
 
 ## Creative Coding
 
@@ -65,16 +68,18 @@ Technologies:
 
  * ActionScript
 
+
 ## Security research software
 
 ### XMHF, TrustVisor, TEE-SDK, TEE-Cred
 
-   Available at <http://xmhf.org>
+* [Project page](http://xmhf.org)
 
 Technologies:
 
  * C
  * x86 assembly
+
  
 ### Taintcheck
 
@@ -82,6 +87,7 @@ Technologies:
 
  * C
  * Valgrind
+
  
 ### BitBlaze
 
@@ -89,6 +95,8 @@ Technologies:
 
  * C
  * x86 assembly
+
+
  
 ### Polygraph
 
@@ -98,127 +106,24 @@ Technologies:
 
 ### sAIM
 
-Multimedia
-----------
 
- * FriendStat
- * Re: Firm Adness
- * I Feel Fantastic
+## Multimedia
 
-Acting
-------
+### FriendStat
+### Re: Firm Adness
+### I Feel Fantastic
 
- * SupermAnnie
- * Pirates of Penzance
- * Yeomen of the Guard
+## Acting
 
-Other
------
+### SupermAnnie
+### Pirates of Penzance
+### Yeomen of the Guard
 
- * Wood!
- * Zod Costume
- * Doc Brown mind-reading helmet
- * Steampunk gun
+## Other
 
-Old
-===
+### Wood!
+### Zod Costume
+### Doc Brown mind-reading helmet
+### Steampunk gun
 
-Piranhas
---------
-
-Creator (Snake)
----------------
-
-Here is some text.Here is some text.Here is some text.Here is some
-text.Here is some text.Here is some text.Here is some text.Here is
-some text.Here is some text.Here is some text.Here is some text.Here
-is some text.
-
-EepEepMotion
--------------
-
-EepEepMotion is a tool for what I call *opportunistic stop motion*. It
-allows the user to label where some object is, and how it is oriented,
-in a set of photographs, and then render an animation using those
-photographs. This tool was developed to help create the Travels of
-Code Monkey video. With a little work it could be generalized and made
-a bit more intuitive to use.
-
-Available on [github](https://github.com/sporksmith/EepEepMotion)
-
-Development journal on
-[wordpress](http://sporksmith.wordpress.com/travels-of-code-monkey/)
-
-Board game development
-======================
-
-Wood!
------
-
-Multimedia
-==========
-
-Short film
-==========
-
-code monkey
------------
-
-FriendStat
-----------
-
-<iframe width="560" height="315"
-src="http://www.youtube.com/embed/gt2-7ZuFwSU" frameborder="0">  </iframe>
-
-Re: Firm Adness
----------------
-
-<iframe width="560" height="315" src="http://www.youtube.com/embed/2u_C828d3aM" frameborder="0">  </iframe>
-
-I Feel Fantastic
-----------------
-
-<iframe width="420" height="315" src="http://www.youtube.com/embed/zidiWe9yq88" frameborder="0">  </iframe>
-
-Acting
-======
-
-SupermAnnie
------------
-
-Pirates of Penzance
--------------------
-
-Making physical things
-======================
-
-Zod Costume
------------
-
-The Great Scotts
-----------------
-
-Doc Brown mind-reading helmet.
-
-Steampunk gun.
-
-Security research software
-==========================
-
-XMHF, TrustVisor, TEE-SDK, TEE-Cred
------------------------------------
-
-Available at <http://xmhf.org>
-
-Taintcheck
-----------
-
-Polygraph
----------
-
-sAIM
-----
-
-Academic publications
-=====================
-
+</div>
