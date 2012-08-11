@@ -53,11 +53,11 @@ game design and implementation, which included creating a custom audio
 manager to handle synchronized and positioned musical loops.
 
 > Part music mix box, part Nibbler, and part 'just a fun tech
-toy'. Devour your own tail to create new planets. Planets grow and
-evolve and can be consumed again. Each planet grows musically, and all
-planets combined make a lush soundtrack. Make your own universe,
-losing part of yourself every time and devour planets to get your tail
-back to start the cycle anew.
+> toy'. Devour your own tail to create new planets. Planets grow and
+> evolve and can be consumed again. Each planet grows musically, and
+> all planets combined make a lush soundtrack. Make your own universe,
+> losing part of yourself every time and devour planets to get your
+> tail back to start the cycle anew.
 
  * [Project page](http://globalgamejam.org/2012/creator/)
 
@@ -129,7 +129,6 @@ Piranhas
 Creator (Snake)
 ---------------
 
-[<img src="images/creator-snake.png" width=320 height=240>](http://globalgamejam.org/2012/creator/)
 Here is some text.Here is some text.Here is some text.Here is some
 text.Here is some text.Here is some text.Here is some text.Here is
 some text.Here is some text.Here is some text.Here is some text.Here
@@ -168,17 +167,18 @@ code monkey
 FriendStat
 ----------
 
-<iframe width="560" height="315" src="http://www.youtube.com/embed/gt2-7ZuFwSU" frameborder="0" allowfullscreen></iframe>
+<iframe width="560" height="315"
+src="http://www.youtube.com/embed/gt2-7ZuFwSU" frameborder="0">  </iframe>
 
 Re: Firm Adness
 ---------------
 
-<iframe width="560" height="315" src="http://www.youtube.com/embed/2u_C828d3aM" frameborder="0" allowfullscreen></iframe>
+<iframe width="560" height="315" src="http://www.youtube.com/embed/2u_C828d3aM" frameborder="0">  </iframe>
 
 I Feel Fantastic
 ----------------
 
-<iframe width="420" height="315" src="http://www.youtube.com/embed/zidiWe9yq88" frameborder="0" allowfullscreen></iframe>
+<iframe width="420" height="315" src="http://www.youtube.com/embed/zidiWe9yq88" frameborder="0">  </iframe>
 
 Acting
 ======
