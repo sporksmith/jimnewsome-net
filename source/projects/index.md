@@ -70,7 +70,7 @@ I Feel Fantastic
 Acting
 ======
 
-SuperMannie
+SupermAnnie
 -----------
 
 Pirates of Penzance
