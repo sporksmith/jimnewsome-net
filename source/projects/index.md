@@ -12,7 +12,7 @@ toc: true
 
 ## Creative Coding
 
-### EepEepMotion and Travels of Code Monkey
+### EepEepMotion
 
 EepEepMotion is a tool for *opportunistic stop motion*; given a set of
 photographs with some common object (e.g., a stuffed monkey) in them,
@@ -23,9 +23,9 @@ animation with a place-holder object using the standard Blender tools,
 exports the animation using a custom Blender plugin, and renders the
 animation with the Processing tool.
 
-This tool was developed to create the Travels of Code Monkey
-video. With a little work it could be generalized and made more
-user-friendly.
+This tool was developed to create the
+[Travels of Code Monkey](#travels-of-code-monkey) video. With a little
+work it could be generalized and made more user-friendly.
 
  * [Travels of Code Monkey (video)](http://www.youtube.com/watch?v=qhV4mSn1jrY)
  * [Source code](https://github.com/sporksmith/EepEepMotion)
@@ -51,9 +51,10 @@ Technologies:
 ### Creator
 
 Creator was created for the 2012
-[Global Game Jam](http://globalgamejam.org/). I was involved in the
-game design and implementation, which included creating a custom audio
-manager to handle synchronized and positioned musical loops.
+[Global Game Jam](http://globalgamejam.org/), tying for second
+place. I was involved in the game design and implementation. This
+included creating a custom audio manager to handle synchronized and
+positioned musical loops.
 
 > Part music mix box, part Nibbler, and part 'just a fun tech
 > toy'. Devour your own tail to create new planets. Planets grow and
@@ -68,6 +69,22 @@ Technologies:
 
  * ActionScript
 
+### Doc Brown mind-reading helmet
+
+Created a replica of
+[Doc Brown's mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
+originally for a group Halloween costume. I designed and integrated
+the pulsing LED system, (with pulse rate controllable by a
+potentiometer), using an Arduino. Also helped with the structural
+design.
+
+* Can be seen in action as "time projection helmet" in the short film, [Sleeptalkers](http://www.youtube.com/watch?v=1FhZdwLL6iI&t=1m)
+
+Technologies:
+
+ * C
+ * [Arduino](http://www.arduino.cc/)
+ * [FoamCore](http://en.wikipedia.org/wiki/Foamcore)
 
 ## Security research software
 
@@ -96,8 +113,6 @@ Technologies:
  * C
  * x86 assembly
 
-
- 
 ### Polygraph
 
 Technologies:
@@ -106,24 +121,27 @@ Technologies:
 
 ### sAIM
 
+## Videos
 
-## Multimedia
-
+### Travels of Code Monkey
 ### FriendStat
 ### Re: Firm Adness
 ### I Feel Fantastic
 
-## Acting
+## Stage
 
-### SupermAnnie
-### Pirates of Penzance
-### Yeomen of the Guard
+* Yeomen of the Guard 10/2012: ensemble
+* [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
+* Pirates of Penzance 3/2012: ensemble
+* Evening in Quarantine 10/2010: The Zombie Opera: running soldier
 
+{% comment %}
 ## Other
 
 ### Wood!
 ### Zod Costume
 ### Doc Brown mind-reading helmet
 ### Steampunk gun
+{% endcomment %}
 
 </div>
