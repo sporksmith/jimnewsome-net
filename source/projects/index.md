@@ -42,6 +42,12 @@ Piranha Tank is a tablet/smart-phone toy in which a swarm of hungry
 piranhas pursues and munches on the user's finger. I built it with
 Haxe and NME, allowing it to be deployed across many platforms.
 
+Current builds (work in progress):
+
+ * [Flash](piranha-tank/piranha-tank.swf) Play in your browser!
+ * [Android](piranha-tank/piranha-tank-debug.apk) Install on Android!
+   ("Unknown sources" must be enabled)
+
 Technologies:
 
  * [Haxe](http://haxe.org/)
