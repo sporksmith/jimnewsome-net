@@ -4,7 +4,7 @@ title: "In-Repository Documentation"
 date: 2012-07-04 11:31
 comments: true
 categories: 
-published: false
+published: true
 ---
 
 Introduction
@@ -45,7 +45,7 @@ for publishing, such as `html` and `pdf`. (One of my favorites is
 useful
 [extensions](http://johnmacfarlane.net/pandoc/README.html#pandocs-markdown)).
 
-There are also many tools for publishing a whole site or wiki from
+There are many tools for publishing a whole site or wiki from
 Markdown-generated files, and several project-hosting platforms
 include support for Markdown-based wikis and for rendering
 in-repository Markdown files, including SourceForge's Allura platform.
@@ -55,7 +55,7 @@ Why In-Repository?
 
 The software engineering principle of
 [Don't Repeat Yourself](http://en.wikipedia.org/wiki/Don't_repeat_yourself)
-principle) applies equally well to documentation. There should be only
+applies equally well to documentation. There should be only
 one canonical place for documentation. Having documentation in two
 places (such as in a wiki and in in-repository README files) will tend
 to result in them getting out of sync, and more than likely one of
@@ -72,12 +72,15 @@ one place, in the code repository itself seems ideal.
   you have a checkout of the repository you always have the relevant
   documentation right there.
 * Documentation versions are kept synchronized with code versions.
+
     * A feature branch that changes behavior can also update the
       documentation. The behavior changes and documentation changes
       can be merged atomically.
+
     * If you have an old checkout or an archive tarball of the code,
       you also have the version of the documentation that applies to
       that exact version.
+
 * In-repository documentation sources can be edited with external
   editors, rather than browser text windows. (This is also possible
   with some alternative ways of managing documentation, but not
@@ -223,11 +226,16 @@ GitHub
 
 [GitHub](http://github.com)'s repository viewer also renders markdown
 files. Unfortunately, it appears that creating a relative link from
-such a markdown file to other files in the repository is
-***impossible***, and
-[not likely to be added](https://github.com/github/markup/issues/84).
+the root README to other files in the repository is ***impossible***,
+and [not likely to be
+added](https://github.com/github/markup/issues/84).
 
-Another possibility I haven't looked into is to use
-[GitHub Pages](http://pages.github.com/). That feature publishes
-Markdown files from a branch named `gh-pages`, using
-[jekyll](https://github.com/mojombo/jekyll/).
+Another possibility I haven't looked into is to use [GitHub
+Pages](http://pages.github.com/). That feature publishes Markdown
+files from a branch named `gh-pages`, using
+[jekyll](https://github.com/mojombo/jekyll/). My impression is that
+the intended usage is for the `gh-pages` branch to diverge from code
+branches at the first commit, and not contain the code
+itself. However, I don't think there's anything to stop one from
+keeping `gh-pages` synchronized with master; i.e., having the markdown
+files mixed with the code.
