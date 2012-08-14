@@ -44,9 +44,9 @@ Haxe and NME, allowing it to be deployed across many platforms.
 
 Current builds (work in progress):
 
- * [Flash](piranha-tank/piranha-tank.swf) Play in your browser!
- * [Android](piranha-tank/piranha-tank-debug.apk) Install on Android!
-   ("Unknown sources" must be enabled)
+ * [Flash](piranha-tank/piranha-tank.swf): Play in your browser
+ * [Android](piranha-tank/piranha-tank-debug.apk): Install on your
+   Android device ("Unknown sources" must be enabled)
 
 Technologies:
 
@@ -81,10 +81,9 @@ Created a replica of
 [Doc Brown's mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
 originally for a group Halloween costume. I designed and integrated
 the pulsing LED system, (with pulse rate controllable by a
-potentiometer), using an Arduino. Also helped with the structural
-design.
+potentiometer), using an Arduino.
 
-* Can be seen in action as "time projection helmet" in the short film, [Sleeptalkers](http://www.youtube.com/watch?v=1FhZdwLL6iI&t=1m)
+* See used as "time projection helmet" in the short film: [Sleeptalkers](http://www.youtube.com/watch?v=1FhZdwLL6iI&t=1m).
 
 Technologies:
 
