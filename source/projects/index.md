@@ -77,13 +77,13 @@ Technologies:
 
 ### Doc Brown mind-reading helmet
 
-Created a replica of
+Helped create a replica of
 [Doc Brown's mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
 originally for a group Halloween costume. I designed and integrated
 the pulsing LED system, (with pulse rate controllable by a
 potentiometer), using an Arduino.
 
-* See used as "time projection helmet" in the short film: [Sleeptalkers](http://www.youtube.com/watch?v=1FhZdwLL6iI&t=1m).
+* Used as "time projection helmet" in the short film: [Sleeptalkers](http://www.youtube.com/watch?v=1FhZdwLL6iI&t=1m).
 
 Technologies:
 
