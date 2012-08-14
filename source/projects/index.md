@@ -56,11 +56,11 @@ Technologies:
 
 ### Creator
 
-Creator was created for the 2012
+Creator was made in 48 hours for the 2012
 [Global Game Jam](http://globalgamejam.org/), tying for second
 place. I was involved in the game design and implementation. This
 included creating a custom audio manager to handle synchronized and
-positioned musical loops.
+spatially positioned musical loops.
 
 > Part music mix box, part Nibbler, and part 'just a fun tech
 > toy'. Devour your own tail to create new planets. Planets grow and
@@ -69,7 +69,9 @@ positioned musical loops.
 > losing part of yourself every time and devour planets to get your
 > tail back to start the cycle anew.
 
- * [Project page](http://globalgamejam.org/2012/creator/)
+ * [Project page](http://globalgamejam.org/2012/creator/): Credits,
+   source code, etc.
+ * [Play!](http://globalgamejam.org/2012/creator/play)
 
 Technologies:
 
@@ -77,8 +79,8 @@ Technologies:
 
 ### Doc Brown mind-reading helmet
 
-Helped create a replica of
-[Doc Brown's mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
+I helped create a replica of
+Doc Brown's [mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
 originally for a group Halloween costume. I designed and integrated
 the pulsing LED system, (with pulse rate controllable by a
 potentiometer), using an Arduino.
@@ -91,9 +93,67 @@ Technologies:
  * [Arduino](http://www.arduino.cc/)
  * [FoamCore](http://en.wikipedia.org/wiki/Foamcore)
 
+
+## Videos
+
+### Travels of Code Monkey
+
+I created this video using my tool [EeeEepMotion](#eepeepmotion).
+
+ * [Travels of Code Monkey](http://www.youtube.com/watch?v=qhV4mSn1jrY)
+
+### FriendStat
+
+FriendStat was an entry and audience-choice award winner in the 2011
+Pittsburgh 48 Hour Film Festival. I was on the writing team, and
+played 'Gas mask in black'.
+
+ * [FriendStat](http://www.youtube.com/watch?v=gt2-7ZuFwSU) on YouTube
+
+### Re: Firm Adness
+
+Re: Firm Adness was an entry and audience-choice award winner in the
+2012 Pittsburgh 48 Hour Film Festival. I was on the writing team, and
+played 'wholesome Dad'.
+
+ * [Re: Firm Adness](http://www.youtube.com/watch?v=2u_C828d3aM) on YouTube
+
+### I Feel Fantastic
+
+This is a music video created for Jonathan Coulton's song
+[I Feel Fantastic](http://www.jonathancoulton.com/wiki/I_Feel_Fantastic). I
+starred and co-directed.
+
+ * [I Feel Fantastic](http://www.youtube.com/watch?v=zidiWe9yq88) on YouTube
+
+## Stage
+
+ * [Pittsburgh Savoyards](http://www.pittsburghsavoyards.org/)
+   * Pirates of Penzance 3/2012: ensemble
+   * Yeomen of the Guard 10/2012: ensemble
+ * [Parallax Second Players](http://www.parsec-sff.org/confluence/play.html)
+
+   * [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
+
+ * [Evening in Quarantine: The Zombie Opera](http://www.thezombieopera.com/)
+   10/2010: running soldier
+
 ## Security research software
 
 ### XMHF, TrustVisor, TEE-SDK, TEE-Cred
+
+My recent academic work uses trusted computing and virtualization to
+create isolated, trustworthy execution environments. While trusted
+computing is often perceived as restricting what the *user* can do
+(e.g., DRM), our work focuses on restricting what *malware* can do
+(e.g., protecting a password database from malware in TEE-Cred), or on
+restricting what remote servers can do (e.g., forcing the server to
+prove that it doesn't store or leak your plaintext password).
+
+I contributed heavily to the TrustVisor hypervisor. I also created the
+TEE-SDK---development tools for using Trusted Execution
+Environments---and TEE-Cred---a password manager that protects its
+database from malware.
 
 * [Project page](http://xmhf.org)
 
@@ -101,17 +161,32 @@ Technologies:
 
  * C
  * x86 assembly
-
  
-### Taintcheck
+### TaintCheck
+
+TaintCheck is a plugin for [Valgrind](http://valgrind.org/) that
+performs dataflow analysis (taint analysis) to track how untrusted
+data is propagated and used in a running program binary. This
+technique has a number of applications, including detecting many types
+of control-flow-hijacking exploits.
+
+The source code is available on request. However, it is no longer
+maintained, and does not work with recent versions of Valgrind. You
+might be interested in
+[TEMU](http://bitblaze.cs.berkeley.edu/temu.html) instead, which
+performs whole-system taint analysis in QEMU.
 
 Technologies:
 
  * C
  * Valgrind
 
- 
-### BitBlaze
+### Vine
+
+Vine is a tool for static analysis of x86 assembly. I was involved in
+its creation.
+
+* [Vine project](http://bitblaze.cs.berkeley.edu/vine.html)
 
 Technologies:
 
@@ -120,25 +195,19 @@ Technologies:
 
 ### Polygraph
 
+Polygraph is a set of tools for generating signatures from a few
+examples of exploits or worms in a network trace. In particular, it
+was designed to work for *polymorphic* worms, which use code
+obfuscation and encryption to make such signature generation
+difficult.
+
 Technologies:
 
  * Python
 
+{% comment %}
 ### sAIM
-
-## Videos
-
-### Travels of Code Monkey
-### FriendStat
-### Re: Firm Adness
-### I Feel Fantastic
-
-## Stage
-
-* Yeomen of the Guard 10/2012: ensemble
-* [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
-* Pirates of Penzance 3/2012: ensemble
-* Evening in Quarantine 10/2010: The Zombie Opera: running soldier
+{% endcomment %}
 
 {% comment %}
 ## Other
