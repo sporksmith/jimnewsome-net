@@ -37,15 +37,15 @@ Technologies:
  * [Processing](http://processing.org/)
  * [Blender](http://www.blender.org/)
 
-### Piranha Tank
+### Piranha Tank (work in progress)
 
 ![Piranha Tank](/images/piranha-tank.png)
 
 Piranha Tank is a tablet/smart-phone toy in which a swarm of hungry
-piranhas pursues and munches on the user's finger. I built it with
+piranhas pursues and munches on the user's finger. I'm building it with
 Haxe and NME, allowing it to be deployed across many platforms.
 
-Current builds (work in progress):
+Current builds:
 
  * [Flash](piranha-tank/piranha-tank.swf): Play in your browser
  * [Android](piranha-tank/piranha-tank-debug.apk): Install on your
