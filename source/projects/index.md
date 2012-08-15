@@ -6,11 +6,14 @@ comments: true
 sharing: true
 footer: true
 toc: true
+sidebar: false
 ---
 
 ## Creative Coding
 
 ### EepEepMotion
+
+![Monkey Labeling](/images/monkey-labeling.jpg)
 
 EepEepMotion is a tool for *opportunistic stop motion*; given a set of
 photographs with some common object (e.g., a stuffed monkey) in them,
@@ -36,6 +39,8 @@ Technologies:
 
 ### Piranha Tank
 
+![Piranha Tank](/images/piranha-tank.png)
+
 Piranha Tank is a tablet/smart-phone toy in which a swarm of hungry
 piranhas pursues and munches on the user's finger. I built it with
 Haxe and NME, allowing it to be deployed across many platforms.
@@ -53,6 +58,8 @@ Technologies:
  * [HaxePunk](http://haxepunk.com/)
 
 ### Creator
+
+![Creator Snake](/images/creator-snake.png)
 
 Creator was made in 48 hours for the 2012
 [Global Game Jam](http://globalgamejam.org/), tying for second
@@ -77,6 +84,8 @@ Technologies:
 
 ### Doc Brown mind-reading helmet
 
+![Sleeptalkers helmet](/images/sleeptalkers-helmet.jpg)
+
 I helped create a replica of
 Doc Brown's [mind-reading helmet](images/doc-brown-thinking-cap-back-to-the-future.jpg),
 originally for a group Halloween costume. I designed and integrated
@@ -96,11 +105,15 @@ Technologies:
 
 ### Travels of Code Monkey
 
+![Code monkey](/images/code-monkey.jpg)
+
 I created this video using my tool [EeeEepMotion](#eepeepmotion).
 
  * [Travels of Code Monkey](http://www.youtube.com/watch?v=qhV4mSn1jrY)
 
 ### FriendStat
+
+![FriendStat](/images/friendstat.jpg)
 
 FriendStat was an entry and audience-choice award winner in the 2011
 Pittsburgh 48 Hour Film Festival. I was on the writing team, and
@@ -110,6 +123,8 @@ played 'Gas mask in black'.
 
 ### Re: Firm Adness
 
+![Re: Firm Adness](/images/re-firm-adness.jpg)
+
 Re: Firm Adness was an entry and audience-choice award winner in the
 2012 Pittsburgh 48 Hour Film Festival. I was on the writing team, and
 played 'wholesome Dad'.
@@ -117,6 +132,8 @@ played 'wholesome Dad'.
  * [Re: Firm Adness](http://www.youtube.com/watch?v=2u_C828d3aM) on YouTube
 
 ### I Feel Fantastic
+
+![I Feel Fantastic](/images/fantastic-whee.jpg)
 
 This is a music video created for Jonathan Coulton's song
 [I Feel Fantastic](http://www.jonathancoulton.com/wiki/I_Feel_Fantastic). I
