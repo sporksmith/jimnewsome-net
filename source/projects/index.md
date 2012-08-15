@@ -168,7 +168,7 @@ TEE-SDK---development tools for using Trusted Execution
 Environments---and TEE-Cred---a password manager that protects its
 database from malware.
 
-* [Project page](http://xmhf.org)
+ * [Project page](http://xmhf.org)
 
 Technologies:
 
@@ -196,8 +196,8 @@ Technologies:
 
 ### Vine
 
-Vine is a tool for static analysis of x86 assembly. I was involved in
-its creation.
+Vine is a tool for static analysis of x86 assembly. I was involved
+in its design and implementation.
 
 * [Vine project](http://bitblaze.cs.berkeley.edu/vine.html)
 
