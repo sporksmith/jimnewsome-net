@@ -8,8 +8,6 @@ footer: true
 toc: true
 ---
 
-<div class="entry-content" markdown="1">
-
 ## Creative Coding
 
 ### EepEepMotion
@@ -132,9 +130,7 @@ starred and co-directed.
    * Pirates of Penzance 3/2012: ensemble
    * Yeomen of the Guard 10/2012: ensemble
  * [Parallax Second Players](http://www.parsec-sff.org/confluence/play.html)
-
    * [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
-
  * [Evening in Quarantine: The Zombie Opera](http://www.thezombieopera.com/)
    10/2010: running soldier
 
@@ -218,4 +214,3 @@ Technologies:
 ### Steampunk gun
 {% endcomment %}
 
-</div>
