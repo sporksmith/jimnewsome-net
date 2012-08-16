@@ -17,12 +17,12 @@ sidebar: false
 
 EepEepMotion is a tool for *opportunistic stop motion*; given a set of
 photographs with some common object (e.g., a stuffed monkey) in them,
-it lets the user create an animation using individual photos as animation
-frames. To achieve this, the user labels where the target object is
-in each photo using the custom Processing program, creates an
-animation with a place-holder object using the standard Blender tools,
-exports the animation using a custom Blender plugin, and renders the
-animation with the Processing tool.
+it lets the user create an animation using individual photos as
+animation frames. To achieve this, the user labels where the target
+object is in each photo using EepEepMotion, creates an animation with
+a place-holder object using the standard Blender tools, exports the
+animation using an included Blender plugin, and uses EepEepMotion
+again to render the animation.
 
 This tool was developed to create the
 [Travels of Code Monkey](#travels-of-code-monkey) video. With a little
