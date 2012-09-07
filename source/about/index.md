@@ -7,20 +7,23 @@ sharing: true
 footer: true
 ---
 
-I, Jim Newsome, am an independent software developer. I am available
+I am an independent software developer and consultant. I am available
 for freelance software design, development, and security analysis.
 
-Technologies
+ * [Project portfolio](projects)
+ * [cv](about/jnewsome-cv.pdf)
+ * [github profile](http://github.com/sporksmith)
+ * [sourceforge profile](http://sourceforge.net/users/jnewsome)
+ 
+Technologies, and relevant projects:
 
- * **C** very experienced (TaintCheck, Vine, XMHF)
- * **C++** experienced (Vine)
- * **Python** experienced (Polygraph)
- * **Java** (EepEepMotion)
- * **Processing** (EepEepMotion)
- * **Arduino** (Doc Brown Hat, LED sign)
- * **Haxe** (PiranhaTank)
- * **ActionScript** (PiranhaTank, Creator)
+ * **C**: TaintCheck, Vine, XMHF
+ * **x86 assembly**: TaintCheck, Vine, XMHF
+ * **C++**: Vine
+ * **Python**: Polygraph
+ * **Java**: EepEepMotion
+ * **Processing**: EepEepMotion
+ * **Arduino**: Doc Brown Hat
+ * **Haxe**: PiranhaTank
+ * **ActionScript**: PiranhaTank, Creator
 
-Areas
-
- * Secure system design and analysis (Bosch, CMU, NoFuss)
