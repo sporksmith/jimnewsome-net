@@ -100,57 +100,6 @@ Technologies:
  * [Arduino](http://www.arduino.cc/)
  * [FoamCore](http://en.wikipedia.org/wiki/Foamcore)
 
-
-## Videos
-
-### Travels of Code Monkey
-
-![Code monkey](/images/code-monkey.jpg)
-
-I created this video using my tool [EeeEepMotion](#eepeepmotion).
-
- * [Travels of Code Monkey](http://www.youtube.com/watch?v=qhV4mSn1jrY)
-
-### FriendStat
-
-![FriendStat](/images/friendstat.jpg)
-
-FriendStat was an entry and audience-choice award winner in the 2011
-Pittsburgh 48 Hour Film Festival. I was on the writing team, and
-played 'Gas mask in black'.
-
- * [FriendStat](http://www.youtube.com/watch?v=gt2-7ZuFwSU) on YouTube
-
-### Re: Firm Adness
-
-![Re: Firm Adness](/images/re-firm-adness.jpg)
-
-Re: Firm Adness was an entry and audience-choice award winner in the
-2012 Pittsburgh 48 Hour Film Festival. I was on the writing team, and
-played 'wholesome Dad'.
-
- * [Re: Firm Adness](http://www.youtube.com/watch?v=2u_C828d3aM) on YouTube
-
-### I Feel Fantastic
-
-![I Feel Fantastic](/images/fantastic-whee.jpg)
-
-This is a music video created for Jonathan Coulton's song
-[I Feel Fantastic](http://www.jonathancoulton.com/wiki/I_Feel_Fantastic). I
-starred and co-directed.
-
- * [I Feel Fantastic](http://www.youtube.com/watch?v=zidiWe9yq88) on YouTube
-
-## Stage
-
- * [Pittsburgh Savoyards](http://www.pittsburghsavoyards.org/)
-   * Pirates of Penzance 3/2012: ensemble
-   * Yeomen of the Guard 10/2012: ensemble
- * [Parallax Second Players](http://www.parsec-sff.org/confluence/play.html)
-   * [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
- * [Evening in Quarantine: The Zombie Opera](http://www.thezombieopera.com/)
-   10/2010: running soldier
-
 ## Security research software
 
 ### XMHF, TrustVisor, TEE-SDK, TEE-Cred
@@ -217,6 +166,57 @@ difficult.
 Technologies:
 
  * Python
+
+
+## Videos
+
+### Travels of Code Monkey
+
+![Code monkey](/images/code-monkey.jpg)
+
+I created this video using my tool [EeeEepMotion](#eepeepmotion).
+
+ * [Travels of Code Monkey](http://www.youtube.com/watch?v=qhV4mSn1jrY)
+
+### FriendStat
+
+![FriendStat](/images/friendstat.jpg)
+
+FriendStat was an entry and audience-choice award winner in the 2011
+Pittsburgh 48 Hour Film Festival. I was on the writing team, and
+played 'Gas mask in black'.
+
+ * [FriendStat](http://www.youtube.com/watch?v=gt2-7ZuFwSU) on YouTube
+
+### Re: Firm Adness
+
+![Re: Firm Adness](/images/re-firm-adness.jpg)
+
+Re: Firm Adness was an entry and audience-choice award winner in the
+2012 Pittsburgh 48 Hour Film Festival. I was on the writing team, and
+played 'wholesome Dad'.
+
+ * [Re: Firm Adness](http://www.youtube.com/watch?v=2u_C828d3aM) on YouTube
+
+### I Feel Fantastic
+
+![I Feel Fantastic](/images/fantastic-whee.jpg)
+
+This is a music video created for Jonathan Coulton's song
+[I Feel Fantastic](http://www.jonathancoulton.com/wiki/I_Feel_Fantastic). I
+starred and co-directed.
+
+ * [I Feel Fantastic](http://www.youtube.com/watch?v=zidiWe9yq88) on YouTube
+
+## Stage
+
+ * [Pittsburgh Savoyards](http://www.pittsburghsavoyards.org/)
+   * Pirates of Penzance 3/2012: ensemble
+   * Yeomen of the Guard 10/2012: ensemble
+ * [Parallax Second Players](http://www.parsec-sff.org/confluence/play.html)
+   * [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
+ * [Evening in Quarantine: The Zombie Opera](http://www.thezombieopera.com/)
+   10/2010: running soldier
 
 {% comment %}
 ### sAIM
