@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Jim Newsome]]></title>
-  <link href="http://growing-warrior-1657.herokuapp.com//atom.xml" rel="self"/>
-  <link href="http://growing-warrior-1657.herokuapp.com//"/>
-  <updated>2012-08-16T06:26:26-04:00</updated>
-  <id>http://growing-warrior-1657.herokuapp.com//</id>
+  <link href="http://www.jimnewsome.net/atom.xml" rel="self"/>
+  <link href="http://www.jimnewsome.net/"/>
+  <updated>2012-09-07T13:07:46-04:00</updated>
+  <id>http://www.jimnewsome.net/</id>
   <author>
     <name><![CDATA[Jim Newsome]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[In-Repository Documentation]]></title>
-    <link href="http://growing-warrior-1657.herokuapp.com//blog/2012/07/04/in-repository-documentation/"/>
+    <link href="http://www.jimnewsome.net/blog/2012/07/04/in-repository-documentation/"/>
     <updated>2012-07-04T11:31:00-04:00</updated>
-    <id>http://growing-warrior-1657.herokuapp.com//blog/2012/07/04/in-repository-documentation</id>
+    <id>http://www.jimnewsome.net/blog/2012/07/04/in-repository-documentation</id>
     <content type="html"><![CDATA[<h1>Introduction</h1>
 
 <p>Two popular places to keep documentation for programming projects are:</p>
