@@ -7,8 +7,7 @@ sharing: true
 footer: true
 ---
 
-I am an independent software developer and consultant. I am available
-for freelance software design, development, and security analysis.
+I am a computer engineer and occasional operatic bass.
 
  * [Project portfolio](projects)
  * [cv](about/jnewsome-cv.pdf)
