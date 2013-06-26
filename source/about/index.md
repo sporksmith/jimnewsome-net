@@ -16,8 +16,8 @@ I am a computer engineer and occasional operatic bass.
  
 Technologies, and relevant projects:
 
- * **C**: TaintCheck, Vine, XMHF
- * **x86 assembly**: TaintCheck, Vine, XMHF
+ * **C**: TaintCheck, Vine, [XMHF](http://www.xmhf.org)
+ * **x86 assembly**: TaintCheck, Vine, [XMHF](http://www.xmhf.org)
  * **C++**: Vine
  * **Python**: Polygraph
  * **Java**: EepEepMotion
