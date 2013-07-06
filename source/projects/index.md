@@ -22,7 +22,7 @@ Your job is to weaken (with your eye-lasers, of course) and collect
 the germs infecting the patient's arteries, while contending with
 the rhythmic blood flow.
 
-Made with [Lara Schenk](http://notlaura.com/) and Brian Bogovich.
+Made with Brian Bogovich and [Lara Schenk](http://notlaura.com/).
 Soundtrack "Bang That Accordian" by [Bonnie Bogovich](http://www.blackcatbonifide.com/).
 
 [Play it now!](projects/gpgp/)
