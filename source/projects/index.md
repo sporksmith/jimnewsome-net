@@ -11,6 +11,20 @@ sidebar: false
 
 ## Creative Coding
 
+### Dance Ave
+
+![Dance Ave](/images/dance-ave.jpg)
+
+[Dance Ave](https://github.com/sporksmith/dance_ave/)
+ is a physical game where players try to reach all of several stations positioned around an area.
+Players may only move between stations by dancing with passers-by.
+The telephony back-end comes in at the stations, where players dial a special code
+with their cell phone. Doing so gives the player credit for reaching that station, tells them
+how many stations they have left to visit, and then plays the song for that station.
+Players use that song to groove over to the next station.
+
+[Related blog posts](/blog/categories/danceave/)
+
 ### EepEepMotion
 
 ![Monkey Labeling](/images/monkey-labeling.jpg)
