@@ -4,7 +4,7 @@
   <title><![CDATA[Jim Newsome]]></title>
   <link href="http://www.jimnewsome.net/atom.xml" rel="self"/>
   <link href="http://www.jimnewsome.net/"/>
-  <updated>2013-07-06T18:40:11-04:00</updated>
+  <updated>2013-09-17T21:58:22-04:00</updated>
   <id>http://www.jimnewsome.net/</id>
   <author>
     <name><![CDATA[Jim Newsome]]></name>
@@ -12,6 +12,27 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Guinea Pig Guinea Pig]]></title>
+    <link href="http://www.jimnewsome.net/blog/2013/07/06/guinea-pig-guinea-pig/"/>
+    <updated>2013-07-06T18:43:00-04:00</updated>
+    <id>http://www.jimnewsome.net/blog/2013/07/06/guinea-pig-guinea-pig</id>
+    <content type="html"><![CDATA[<p><img src="http://www.jimnewsome.net/images/gpgp.png" alt="Guinea Pig Guinea Pig" /></p>
+
+<p>Guinea Pig Guinea Pig is an HTML5 game made for the
+<a href="http://globalgamejam.org/2013/guinea-pig-guinea-pig">2013 Global Game Jam</a>.
+You play a (further) miniaturized, super-powered, Guinea Pig.
+Your job is to weaken (with your eye-lasers, of course) and collect
+the germs infecting the patient&rsquo;s arteries, while contending with
+the rhythmic blood flow.</p>
+
+<p>Made with Brian Bogovich and <a href="http://notlaura.com/">Lara Schenk</a>.
+Soundtrack &ldquo;Bang That Accordian&rdquo; by <a href="http://www.blackcatbonifide.com/">Bonnie Bogovich</a>.</p>
+
+<p><a href="projects/gpgp/">Play it now!</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Dance Ave]]></title>
