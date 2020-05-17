@@ -77,8 +77,8 @@ Haxe and NME, allowing it to be deployed across many platforms.
 
 Current builds:
 
- * [Flash](piranha-tank/piranha-tank.swf): Play in your browser
- * [Android](piranha-tank/piranha-tank-debug.apk): Install on your
+ * [Flash](/projects/piranha-tank/piranha-tank.swf): Play in your browser
+ * [Android](/projects/piranha-tank/piranha-tank-debug.apk): Install on your
    Android device ("Unknown sources" must be enabled)
 
 Technologies:
