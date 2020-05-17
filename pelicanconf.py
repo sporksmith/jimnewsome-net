@@ -7,6 +7,7 @@ SITENAME = 'jimnewsome.net'
 SITEURL = ''
 
 PATH = 'content'
+ARTICLE_PATHS = ['_posts']
 
 TIMEZONE = 'America/Chicago'
 
