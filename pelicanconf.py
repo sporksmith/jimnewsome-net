@@ -6,7 +6,7 @@ AUTHOR = 'Jim Newsome'
 SITENAME = 'jimnewsome.net'
 SITEURL = ''
 
-PATH = 'content'
+PATH = 'source'
 
 ARTICLE_PATHS = ['_posts']
 ARTICLE_URL = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/'
