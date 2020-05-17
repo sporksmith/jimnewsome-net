@@ -12,6 +12,11 @@ ARTICLE_PATHS = ['_posts']
 ARTICLE_URL = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/'
 ARTICLE_SAVE_AS = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
 
+PAGE_URL = '{slug}/'
+PAGE_SAVE_AS = '{slug}/index.html'
+
+STATIC_PATHS = ['images', 'projects']
+
 TIMEZONE = 'America/Chicago'
 
 DEFAULT_LANG = 'en'

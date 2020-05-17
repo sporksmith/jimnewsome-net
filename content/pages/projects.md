@@ -1,6 +1,6 @@
 ---
 layout: page
-title: "Project Portfolio"
+title: Projects
 date: 2012-08-09 21:04
 comments: true
 sharing: true
@@ -25,7 +25,7 @@ the rhythmic blood flow.
 Made with Brian Bogovich and [Lara Schenk](http://notlaura.com/).
 Soundtrack "Bang That Accordian" by [Bonnie Bogovich](http://www.blackcatbonifide.com/).
 
-[Play it now!](projects/gpgp/)
+[Play it now!](/projects/gpgp/)
 
 ### Dance Ave
 
