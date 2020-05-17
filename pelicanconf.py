@@ -7,7 +7,10 @@ SITENAME = 'jimnewsome.net'
 SITEURL = ''
 
 PATH = 'content'
+
 ARTICLE_PATHS = ['_posts']
+ARTICLE_URL = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/'
+ARTICLE_SAVE_AS = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
 
 TIMEZONE = 'America/Chicago'
 
