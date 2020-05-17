@@ -15,7 +15,7 @@ ARTICLE_SAVE_AS = 'blog/{date:%Y}/{date:%m}/{date:%d}/{slug}/index.html'
 PAGE_URL = '{slug}/'
 PAGE_SAVE_AS = '{slug}/index.html'
 
-STATIC_PATHS = ['images', 'projects']
+STATIC_PATHS = ['images', 'projects', 'static']
 
 TIMEZONE = 'America/Chicago'
 
