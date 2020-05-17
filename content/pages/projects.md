@@ -106,7 +106,8 @@ spatially positioned musical loops.
 
  * [Project page](http://globalgamejam.org/2012/creator/): Credits,
    source code, etc.
- * [Play!](http://globalgamejam.org/2012/creator/play)
+ * [Source](/projects/creator/Creator_GGJ12.zip)
+ * [Play!](/projects/creator/creator-MKBBJN-v2.swf)
 
 Technologies:
 
