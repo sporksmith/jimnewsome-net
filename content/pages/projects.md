@@ -248,17 +248,3 @@ starred and co-directed.
    * [SupermAnnie](https://www.facebook.com/events/409836555719502/) 7/2012: General Zod (also created the logo, and Zod costume)
  * [Evening in Quarantine: The Zombie Opera](http://www.thezombieopera.com/)
    10/2010: running soldier
-
-{% comment %}
-### sAIM
-{% endcomment %}
-
-{% comment %}
-## Other
-
-### Wood!
-### Zod Costume
-### Doc Brown mind-reading helmet
-### Steampunk gun
-{% endcomment %}
-
