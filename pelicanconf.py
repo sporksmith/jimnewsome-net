@@ -36,7 +36,9 @@ AUTHOR_FEED_RSS = None
 
 # Social widget
 SOCIAL = (('Mastodon', 'https://mastodon.social/@sporksmith'),
-          ('Twitter', 'https://twitter.com/sporksmith'),)
+          ('Twitter', 'https://twitter.com/sporksmith'),
+          ('GitHub', 'http://github.com/sporksmith'),
+          )
 
 DEFAULT_PAGINATION = 10
 
