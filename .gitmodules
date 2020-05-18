@@ -1,0 +1,3 @@
+[submodule "source/posts/dev-journal"]
+	path = source/posts/dev-journal
+	url = git@github.com:sporksmith/dev-journal.git

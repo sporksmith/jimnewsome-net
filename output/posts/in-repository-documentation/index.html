@@ -123,7 +123,7 @@ web-view-tool for this purpose.</p>
 in the code repository itself. Documentation is placed in the
 file-system near the relevant component, with a top-level README.md
 for the whole repository and for each component.</p>
-<div class="highlight"><pre><span></span>├── COPYING.md
+<div class="highlight"><pre><span></span><code>├── COPYING.md
 ├── README.md
 ├── libbaremetal/
 │   └── README.md
@@ -149,7 +149,7 @@ for the whole repository and for each component.</p>
     │   ├── hardware-requirements.md
     │   └── installing-xmhf.md
     └── README.md
-</pre></div>
+</code></pre></div>
 
 
 <p>The documentation is viewable in html format through SourceForge's web
@@ -161,19 +161,19 @@ conversion is done transparently by SourceForge's Allura platform.</p>
 small changes to the Allura platform.</p>
 <h2>Shortcut syntax for relative links</h2>
 <p>The vanilla Markdown syntax for title-less links is:</p>
-<div class="highlight"><pre><span></span>[Text](URL)
-</pre></div>
+<div class="highlight"><pre><span></span><code>[Text](URL)
+</code></pre></div>
 
 
 <p>Within the repository, linking to other files within the repository is
 largely redundant. It would be nice to support the abbreviated</p>
-<div class="highlight"><pre><span></span>[path/to/header.h] is a header file specifying...
-</pre></div>
+<div class="highlight"><pre><span></span><code>[path/to/header.h] is a header file specifying...
+</code></pre></div>
 
 
 <p>as a shortcut for:</p>
-<div class="highlight"><pre><span></span>[path/to/header.h](path/to/header.h) is a header file specifying...
-</pre></div>
+<div class="highlight"><pre><span></span><code>[path/to/header.h](path/to/header.h) is a header file specifying...
+</code></pre></div>
 
 
 <p>I've filed
@@ -182,13 +182,13 @@ requesting that extension.</p>
 <p>It would be even nicer if the platform indexed the locations of other
 markdown files within the repository, allowing for a similar syntax as
 "artifact links" in the wiki. i.e., it would be nice to allow:</p>
-<div class="highlight"><pre><span></span>[Installing XMHF]
-</pre></div>
+<div class="highlight"><pre><span></span><code>[Installing XMHF]
+</code></pre></div>
 
 
 <p>as a shortcut for:</p>
-<div class="highlight"><pre><span></span>[Installing XMHF](xmhf/doc/installing-xmhf.md)
-</pre></div>
+<div class="highlight"><pre><span></span><code>[Installing XMHF](xmhf/doc/installing-xmhf.md)
+</code></pre></div>
 
 
 <h2>Support for linking to most recent version of a file</h2>
