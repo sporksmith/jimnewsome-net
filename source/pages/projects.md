@@ -1,13 +1,5 @@
----
-layout: page
 title: Projects
 date: 2012-08-09 21:04
-comments: true
-sharing: true
-footer: true
-toc: true
-sidebar: false
----
 
 ## Creative Coding
 

@@ -1,10 +1,5 @@
----
-layout: post
-title: "Guinea Pig Guinea Pig"
+title: Guinea Pig Guinea Pig
 date: 2013-07-06 18:43
-comments: true
-categories: projects gpgp
----
 
 ![Guinea Pig Guinea Pig](/images/gpgp.png)
 

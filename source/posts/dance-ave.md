@@ -1,10 +1,5 @@
----
-layout: post
-title: "Dance Ave"
+title: Dance Ave
 date: 2013-07-06 14:47
-comments: true
-categories: DanceAve projects
----
 
 I got an interesting request a few months ago--to implement the telephony back-end
 for a real life dancing game to be played at the

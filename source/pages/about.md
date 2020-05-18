@@ -1,11 +1,5 @@
----
-layout: page
 title: About
 date: 2012-09-07 08:55
-comments: false
-sharing: true
-footer: true
----
 
 I am a computer engineer and occasional operatic bass.
 
