@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>"In-Repository Documentation"</title>
+        <title>In-Repository Documentation</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 </head>
 
@@ -20,7 +20,7 @@
     <header>
       <h1 class="entry-title">
         <a href="/blog/2012/07/04/in-repository-documentation/" rel="bookmark"
-           title="Permalink to "In-Repository Documentation"">"In-Repository Documentation"</a></h1>
+           title="Permalink to In-Repository Documentation">In-Repository Documentation</a></h1>
     </header>
 
     <div class="entry-content">
@@ -123,7 +123,7 @@ web-view-tool for this purpose.</p>
 in the code repository itself. Documentation is placed in the
 file-system near the relevant component, with a top-level README.md
 for the whole repository and for each component.</p>
-<div class="highlight"><pre><span></span><code><span class="err">├── COPYING.md</span>
+<div class="highlight"><pre><span></span><span class="err">├── COPYING.md</span>
 <span class="err">├── README.md</span>
 <span class="err">├── libbaremetal/</span>
 <span class="err">│   └── README.md</span>
@@ -149,7 +149,7 @@ for the whole repository and for each component.</p>
 <span class="err">    │   ├── hardware-requirements.md</span>
 <span class="err">    │   └── installing-xmhf.md</span>
 <span class="err">    └── README.md</span>
-</code></pre></div>
+</pre></div>
 
 
 <p>The documentation is viewable in html format through SourceForge's web
@@ -161,19 +161,19 @@ conversion is done transparently by SourceForge's Allura platform.</p>
 small changes to the Allura platform.</p>
 <h2>Shortcut syntax for relative links</h2>
 <p>The vanilla Markdown syntax for title-less links is:</p>
-<div class="highlight"><pre><span></span><code><span class="o">[</span><span class="n">Text</span><span class="o">]</span><span class="p">(</span><span class="n">URL</span><span class="p">)</span><span class="w"></span>
-</code></pre></div>
+<div class="highlight"><pre><span></span><span class="o">[</span><span class="n">Text</span><span class="o">]</span><span class="p">(</span><span class="n">URL</span><span class="p">)</span><span class="w"></span>
+</pre></div>
 
 
 <p>Within the repository, linking to other files within the repository is
 largely redundant. It would be nice to support the abbreviated</p>
-<div class="highlight"><pre><span></span><code><span class="err">[path/to/header.h] is a header file specifying...</span>
-</code></pre></div>
+<div class="highlight"><pre><span></span><span class="err">[path/to/header.h] is a header file specifying...</span>
+</pre></div>
 
 
 <p>as a shortcut for:</p>
-<div class="highlight"><pre><span></span><code><span class="err">[path/to/header.h](path/to/header.h) is a header file specifying...</span>
-</code></pre></div>
+<div class="highlight"><pre><span></span><span class="err">[path/to/header.h](path/to/header.h) is a header file specifying...</span>
+</pre></div>
 
 
 <p>I've filed
@@ -182,13 +182,13 @@ requesting that extension.</p>
 <p>It would be even nicer if the platform indexed the locations of other
 markdown files within the repository, allowing for a similar syntax as
 "artifact links" in the wiki. i.e., it would be nice to allow:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">Installing</span> <span class="n">XMHF</span><span class="p">]</span>
-</code></pre></div>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Installing</span> <span class="n">XMHF</span><span class="p">]</span>
+</pre></div>
 
 
 <p>as a shortcut for:</p>
-<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">Installing</span> <span class="n">XMHF</span><span class="p">](</span><span class="n">xmhf</span><span class="o">/</span><span class="n">doc</span><span class="o">/</span><span class="n">installing</span><span class="o">-</span><span class="n">xmhf</span><span class="p">.</span><span class="n">md</span><span class="p">)</span>
-</code></pre></div>
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Installing</span> <span class="n">XMHF</span><span class="p">](</span><span class="n">xmhf</span><span class="o">/</span><span class="n">doc</span><span class="o">/</span><span class="n">installing</span><span class="o">-</span><span class="n">xmhf</span><span class="p">.</span><span class="n">md</span><span class="p">)</span>
+</pre></div>
 
 
 <h2>Support for linking to most recent version of a file</h2>

@@ -1,11 +1,6 @@
----
-layout: post
-title: "In-Repository Documentation"
+title: In-Repository Documentation
 date: 2012-07-04 11:31
-comments: true
-categories: 
 published: true
----
 
 Introduction
 ============
