@@ -9,6 +9,7 @@ SITEURL = 'https://www.jimnewsome.net'
 THEME = 'notmyidea'
 
 PATH = 'source'
+OUTPUT_PATH = 'docs/'
 
 ARTICLE_PATHS = ['posts']
 ARTICLE_URL = 'posts/{slug}/'
