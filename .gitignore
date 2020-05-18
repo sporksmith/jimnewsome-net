@@ -12,3 +12,6 @@ vendor
 node_modules
 *~
 /venv
+*.swp
+*.pyc
+__pycache__
