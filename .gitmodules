@@ -1,3 +1,6 @@
 [submodule "source/posts/dev-journal"]
 	path = source/posts/dev-journal
 	url = git@github.com:sporksmith/dev-journal.git
+[submodule "plugins/pelican-jupyter"]
+	path = plugins/pelican-jupyter
+	url = https://github.com/danielfrg/pelican-jupyter.git
