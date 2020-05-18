@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>jimnewsome.net</title>
+        <title>Interposing internal libc calls</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 </head>
 
@@ -12,16 +12,21 @@
                 <nav><ul>
                     <li><a href="/about/">About</a></li>
                     <li><a href="/projects/">Projects</a></li>
-                    <li><a href="/category/misc.html">misc</a></li>
+                    <li class="active"><a href="/category/misc.html">misc</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/posts/interposing-internal-libc-calls/" rel="bookmark"
+           title="Permalink to Interposing internal libc calls">Interposing internal libc calls</a></h1>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/posts/posix-message-queues/">Poking at POSIX message queues</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
-        <abbr class="published" title="2020-05-10T00:00:00-05:00">
-                Published: Sun 10 May 2020
+        <abbr class="published" title="2020-05-05T00:00:00-05:00">
+                Published: Tue 05 May 2020
         </abbr>
 
         <address class="vcard author">
@@ -29,7 +34,7 @@
         </address>
 <p>In <a href="/category/misc.html">misc</a>.</p>
 
-</footer><!-- /.post-info --><style type="text/css">/*!
+</footer><!-- /.post-info -->      <style type="text/css">/*!
 *
 * IPython notebook
 *
@@ -1143,9 +1148,7 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */</style><body><div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Poking-around-at-POSIX-message-queues-in-Linux">Poking around at POSIX message queues in Linux<a class="anchor-link" href="#Poking-around-at-POSIX-message-queues-in-Linux">&#182;</a></h1><p>I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.</p>
-<p>One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have <a href="https://linux.die.net/man/1/ipcmk"><code>ipcmk</code></a>, <a href="https://linux.die.net/man/1/ipcrm"><code>ipcrm</code></a>, and <a href="https://linux.die.net/man/1/ipcs"><code>ipcs</code></a>. <a href="https://unix.stackexchange.com/a/71045">Apparently</a> HP-UX has an analagous tool <code>pipcs</code>, but it hasn't been ported to other platforms.</p>
-<p>This is somewhat mitigated by the ability to mount a virtual filesystem representing the message queues on the system, and manipulate them through normal file commands. You must be root to mount the system, but then any user can then use it. <a href="https://linux.die.net/man/7/mq_overview"><code>mq_overview(7)</code></a> has details, with an example of mounting to <code>/dev/mqueue</code>. On my system (Ubuntu 18.04), this system appears to be automatically mounted. It's unclear though whether or where you can count on it to already be mounted on other systems.</p>
+<h1 id="Interposing-internal-libc-calls">Interposing internal libc calls<a class="anchor-link" href="#Interposing-internal-libc-calls">&#182;</a></h1><h2 id="TLDR">TLDR<a class="anchor-link" href="#TLDR">&#182;</a></h2><p>Calls within libc are generally pre-linked. As a result, they can't be interposed using <code>LD_PRELOAD</code>. This makes it tricky to use <code>LD_PRELOAD</code> to intercept, e.g., all calls to <code>write</code>, but there are some workarounds.</p>
 
 </div>
 </div>
@@ -1153,906 +1156,7 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Creating-a-queue">Creating a queue<a class="anchor-link" href="#Creating-a-queue">&#182;</a></h2><p>We can create a queue using normal file system APIs. Let's use <code>mktemp</code> to generate a unique name for this example:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nv">QFILE</span><span class="o">=</span><span class="sb">`</span>mktemp /dev/mqueue/mqtest.XXXX<span class="sb">`</span>
-<span class="nb">echo</span> <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>/dev/mqueue/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Examining-a-queue">Examining a queue<a class="anchor-link" href="#Examining-a-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can <code>ls</code> it, though this doesn't tell us much:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[2]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>ls -l <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>-rw------- 1 jnewsome jnewsome 80 May 11 08:49 /dev/mqueue/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can <code>cat</code> it, giving some metadata about the state of the queue:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:0          NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>To get more information, we'll need to use the C api.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>The C APIs take a queue name, not the the file system path. The queue name is the basename of the path, with a leading <code>/</code>:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nv">QNAME</span><span class="o">=</span><span class="s2">&quot;/</span><span class="k">$(</span>basename <span class="nv">$QFILE</span><span class="k">)</span><span class="s2">&quot;</span>
-<span class="nb">echo</span> <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's write a small shell function to compile our test programs. It'll take the program source from <code>stdin</code>:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile <span class="o">()</span> <span class="o">{</span>
-  gcc -o <span class="nv">$1</span> -xc -Wall -Werror - -lrt
-<span class="o">}</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Our helper programs are going to have a common preamble. Let's stick those in a shell variable:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">read</span> -r -d <span class="s1">&#39;&#39;</span> C_PRELIMINARIES <span class="s">&lt;&lt; EOM</span>
-<span class="s">#include &lt;fcntl.h&gt;</span>
-<span class="s">#include &lt;sys/stat.h&gt;</span>
-<span class="s">#include &lt;mqueue.h&gt;</span>
-<span class="s">#include &lt;stdio.h&gt;</span>
-<span class="s">#include &lt;stdlib.h&gt;</span>
-
-<span class="s">#define CHECK(x) { \</span>
-<span class="s">  if (!(x)) {\</span>
-<span class="s">    perror(#x);\</span>
-<span class="s">    exit(EXIT_FAILURE);\</span>
-<span class="s">  }\</span>
-<span class="s">}</span>
-
-<span class="s">#define CHECK_GTE0(x) CHECK((x) &gt;= 0)</span>
-<span class="s">#define CHECK_EQ0(x) CHECK((x) == 0)</span>
-
-<span class="s">EOM</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Now let's write and compile our <code>mq_getattr</code> program:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_getattr <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
-
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(argv[1], O_RDONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  printf(&quot;flags: %ld\n&quot;, attr.mq_flags);</span>
-<span class="s">  printf(&quot;maxmsg: %ld\n&quot;, attr.mq_maxmsg);</span>
-<span class="s">  printf(&quot;msgsize: %ld\n&quot;, attr.mq_msgsize);</span>
-<span class="s">  printf(&quot;curmsgs: %ld\n&quot;, attr.mq_curmsgs);</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Running it gives us some new information about the queue:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Writing-to-the-queue">Writing to the queue<a class="anchor-link" href="#Writing-to-the-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Unfortunately there doesn't seem to be a way to write messages to the queue via the file system API. At least, attempting to do so in the obvious way fails:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">echo</span> <span class="s2">&quot;A message&quot;</span> &gt; <span class="nv">$QFILE</span> <span class="o">||</span> <span class="nb">true</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>bash: echo: write error: Invalid argument
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's write another small program that'll read up to the maximum message length from <code>stdin</code>, and then write it to the queue with a specified priority:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_send <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
-
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  CHECK(argc == 3);</span>
-<span class="s">  const char* qname = argv[1];</span>
-<span class="s">  unsigned int priority = atoi(argv[2]);</span>
-<span class="s">  </span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(qname, O_WRONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  </span>
-<span class="s">  char *buf = malloc(attr.mq_msgsize);</span>
-<span class="s">  size_t n;</span>
-<span class="s">  CHECK_GTE0(n = fread(buf, 1, attr.mq_msgsize, stdin));</span>
-<span class="s">  CHECK_GTE0(mq_send(q, buf, n, priority));</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>...and use it to write a message to the queue:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">Hello message queue</span>
-<span class="s">Second line</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Examining the queue, we can see that there's a message there:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:32         NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 1
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Reading-from-the-queue">Reading from the queue<a class="anchor-link" href="#Reading-from-the-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Again, we'll need to write a program to read from the queue. This one will just cat the first message in the queue to <code>stdout</code>, blocking if there isn't a message there yet:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_recv <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
-
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(argv[1], O_RDONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  </span>
-<span class="s">  char *buf = malloc(attr.mq_msgsize);</span>
-<span class="s">  ssize_t n;</span>
-<span class="s">  CHECK_GTE0(n = mq_receive(q, buf, attr.mq_msgsize, NULL));</span>
-<span class="s">  CHECK_GTE0(fwrite(buf, 1, n, stdout));</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>As expected, we can read out the message we wrote to the queue above:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Hello message queue
-Second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>...and doing so returns the queue to its empty state:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:0          NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Multiple-messages">Multiple messages<a class="anchor-link" href="#Multiple-messages">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can write two messages to the queue and get them back individually:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">First message first line</span>
-<span class="s">First message second line</span>
-<span class="s">EOF</span>
-./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">Second message first line</span>
-<span class="s">Second message second line</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>First message first line
-First message second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Second message first line
-Second message second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can use priorities to get them back in a different order. We didn't talk about priorities earlier, but that's the integer passed on the command-line after the queue name. When reading from a queue, the earliest message with the highest priority is returned:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">echo</span> <span class="s2">&quot;First message, priority 0&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">0</span>
-<span class="nb">echo</span> <span class="s2">&quot;Second message, priority 0&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">0</span>
-<span class="nb">echo</span> <span class="s2">&quot;Third message, priority 1&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">1</span>
-<span class="nb">echo</span> <span class="s2">&quot;Fourth message, priority 1&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">1</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Third message, priority 1
-Fourth message, priority 1
-First message, priority 0
-Second message, priority 0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Resource-usage-and-cleanup">Resource usage and cleanup<a class="anchor-link" href="#Resource-usage-and-cleanup">&#182;</a></h2><p>There are system-wide and per-user limits on message queues, and these are surprisingly small by default. Let's go ahead and clean up our queue from above:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>rm <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>While writing this I inadvertently bumped into the per-user limit when I was unable to create a 10th queue:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="k">for</span> i in <span class="o">{</span><span class="m">1</span>..10<span class="o">}</span><span class="p">;</span> <span class="k">do</span> touch /dev/mqueue/exhaust<span class="si">${</span><span class="nv">i</span><span class="si">}</span><span class="p">;</span> <span class="k">done</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>touch: cannot touch &#39;/dev/mqueue/exhaust10&#39;: Too many open files
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>I believe the limit we're hitting is the per-user limit on message queues in bytes:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">ulimit</span> -a <span class="p">|</span> grep POSIX
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>POSIX message queues     (bytes, -q) 819200
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>As we saw from the <code>mq_getattr</code> output above, each queue has <code>msgsize</code> of <code>8192</code>, and <code>maxmsg</code> of <code>10</code>. Therefore <code>10</code> queues would equal the <code>819200</code> limit. Apparently the limit is applied to the <em>potential</em> size of the queue. This is probably preferable over being able to create more queues and then hitting the resource limit when trying to write to them.</p>
-<p>It does seem likely that these parametes were chosen with the intent of allowing <code>10</code> queues per user, but that either the limit is being applied with <code>&lt;</code> rather than <code>&lt;=</code>, or that there's some other per-queue overhead is also being counted.</p>
-<p>In any case, let's clean up.</p>
+<h2 id="Doubling-all-writes-to-standard-output">Doubling all writes to standard output<a class="anchor-link" href="#Doubling-all-writes-to-standard-output">&#182;</a></h2><p>Suppose we want to use <code>LD_PRELOAD</code> to force any output to <code>stdout</code> to happen twice. We'll start with a simple program that writes to <code>stdout</code> once:</p>
 
 </div>
 </div>
@@ -2062,13 +1166,756 @@ Second message, priority 0
 <div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>rm /dev/mqueue/exhaust*
+<div class=" highlight hl-bash"><pre><span></span>cat ./call_write.c
 </pre></div>
 
     </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>#include &lt;unistd.h&gt;
+#include &lt;string.h&gt;
+
+int main(int argc, char **argv) {
+    const char *msg = &#34;Hello write\n&#34;;
+    write(STDOUT_FILENO, msg, strlen(msg));
+    return 0;
+}
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>When we run <code>./call_write</code> we get the expected output:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>./call_write
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Hello write
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If we examine the compiled binary, we can see that the call is made through the PLT (Procedure Linkage Table):</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>objdump -D call_write <span class="p">|</span> grep <span class="s1">&#39;call.*write&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>call_write:     file format elf64-x86-64
+  400567:	e8 a4 fe ff ff       	callq  400410 &lt;write@plt&gt;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This means that at run-time, the dynamic linker is responsible for finding the address of <code>write</code> and patching it into the PLT. This <code>call</code> instruction will then use the patched table to call the correct function. We can enable debugging-output in the dynamic linker to see that it resolves the <code>write</code> symbol to libc, as expected:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_DEBUG</span><span class="o">=</span>bindings ./call_write <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep <span class="s1">&#39;symbol.*write&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>     11280:	binding file ./call_write [0] to /lib/x86_64-linux-gnu/libc.so.6 [0]: normal symbol `write&#39; [GLIBC_2.2.5]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Interposing-a-direct-call-to-write-works">Interposing a direct call to write works<a class="anchor-link" href="#Interposing-a-direct-call-to-write-works">&#182;</a></h3><p>We can <em>interpose</em> this call to <code>write</code> by using the <code>LD_PRELOAD</code> environment variable to tell the dynamic linker to try resolving symbols in <em>our</em> library that we provide before any other libraries.</p>
+<p>Let's create a small library with our own implementation of <code>write</code>. We'll simply get the symbol for libc's <code>write</code>, and then call it twice.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>cat interpose_write.c
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>#define _GNU_SOURCE
+
+#include &lt;dlfcn.h&gt;
+#include &lt;unistd.h&gt;
+
+ssize_t write(int fd, const void *buf, size_t count) {
+    // Look up the next `write` symbol, which will be glibc&#39;s
+    ssize_t (*orig_write)(int fd, const void *buf, size_t count) = 
+        dlsym(RTLD_NEXT, &#34;write&#34;);
+    if (STDOUT_FILENO) {
+        // If we&#39;re writing to stdout, call the original function an extra time.
+        orig_write(fd, buf, count);
+    }
+    return orig_write(fd, buf, count);
+}
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Using <code>LD_PRELOAD</code>, this works as expected. The call to <code>write</code> from our <code>call_fwrite</code> program is intercepted, and we see the output twice:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$PWD</span>/interpose_write.so ./call_write
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Hello write
+Hello write
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can also examine the dynamic linker's debug output again to see that it resolves <code>write</code> twice. First when patching the PLT it finds our <code>write</code>. At run-time when we ask it for the "next" <code>write</code>, it finds libc's version:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_DEBUG</span><span class="o">=</span>bindings <span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$PWD</span>/interpose_write.so ./call_write <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep <span class="s1">&#39;symbol.*write&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>     11297:	binding file ./call_write [0] to /home/jnewsome/projects/dev-journal/interposing-fwrite/interposing-fwrite/interpose_write.so [0]: normal symbol `write&#39; [GLIBC_2.2.5]
+     11297:	binding file /home/jnewsome/projects/dev-journal/interposing-fwrite/interposing-fwrite/interpose_write.so [0] to /lib/x86_64-linux-gnu/libc.so.6 [0]: normal symbol `write&#39;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Interposing-all-the-writes">Interposing <em>all</em> the writes<a class="anchor-link" href="#Interposing-all-the-writes">&#182;</a></h2><p>So far so good. What happens though if the program we're interposing calls some other libc function to write to standard output? They'll all end up eventually needing to make a <code>write</code> system call, so our wrapper should still work... right?</p>
+<p>Let's see what happens if the program calls <code>fwrite</code> instead of <code>write</code>:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>cat call_fwrite.c
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+
+int main(int argc, char **argv) {
+    const char *msg = &#34;Hello fwrite\n&#34;;
+    fwrite(msg, 1, strlen(msg), stdout);
+    return 0;
+}
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$PWD</span>/interpose_write.so ./call_fwrite
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Hello fwrite
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It didn't work. To find out why, let's look at calls to <code>write</code> from within libc:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>objdump -D /lib/x86_64-linux-gnu/libc.so.6 <span class="p">|</span> grep <span class="s1">&#39;call.*__write@@&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>   21cc5:	e8 76 e4 0e 00       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+   303ab:	e8 90 fd 0d 00       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+   7c79a:	e8 41 3a 09 00       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+   8b1b8:	e8 83 4f 08 00       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+   8b1e0:	e8 fb 4f 08 00       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  1154af:	e8 8c ac ff ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  1175bd:	e8 1e 8c ff ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  121ae3:	e8 58 e6 fe ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  123965:	e8 76 c8 fe ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  124059:	e8 82 c1 fe ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  13aae4:	e8 57 56 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  13aca3:	e8 98 54 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  13adc2:	e8 79 53 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  13b840:	e8 fb 48 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  13b982:	e8 b9 47 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  13ba04:	e8 37 47 fd ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  14e7ec:	e8 4f 19 fc ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  156365:	e8 d6 9d fb ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  15aa25:	e8 16 57 fb ff       	callq  110140 &lt;__write@@GLIBC_2.2.5&gt;
+  163c6e:	e8 6d c5 fa ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  164884:	e8 57 b9 fa ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+  164a51:	e8 8a b7 fa ff       	callq  1101e0 &lt;__write@@GLIBC_2.2.5+0xa0&gt;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It turns out that none of the internal calls to <code>write</code> actually use the <code>write</code> symbol. They use <code>__write</code>, which is an alias:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">__write_address</span><span class="o">=</span><span class="sb">`</span>nm -D /lib/x86_64-linux-gnu/libc.so.6 <span class="p">|</span> awk <span class="s1">&#39;/__write/ {print $1}&#39;</span><span class="sb">`</span>
+nm -D /lib/x86_64-linux-gnu/libc.so.6 <span class="p">|</span> grep <span class="nv">$__write_address</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0000000000110140 W write
+0000000000110140 W __write
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Unfortunately, simply overriding <code>__write</code> doesn't work either:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>cat interpose_underbar_write.c
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>#define _GNU_SOURCE
+
+#include &lt;dlfcn.h&gt;
+#include &lt;unistd.h&gt;
+
+ssize_t __write(int fd, const void *buf, size_t count) {
+    ssize_t (*orig_write)(int fd, const void *buf, size_t count) = 
+        dlsym(RTLD_NEXT, &#34;__write&#34;);
+    orig_write(fd, buf, count);
+    return orig_write(fd, buf, count);
+}
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$PWD</span>/interpose_underbar_write.so ./call_fwrite
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>Hello fwrite
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Note that in the <code>call</code> instructions above, the symbols don't have the <code>@plt</code> suffix. The real issue is that none of these calls are via the PLT. When glibc itself is built and linked, the linker can see the call sites and intended destinations at the same time, so it can and does link them at that time. The <em>dynamic</em> linker isn't involved, so <code>LD_PRELOAD</code> has no effect on these call sites.</p>
+<p>Looking at the dynamic linker's debug output again, we can see it never looks up <code>write</code> or <code>__write</code> at all; only <code>fwrite</code>:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[38]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span><span class="nv">LD_DEBUG</span><span class="o">=</span>bindings <span class="nv">LD_PRELOAD</span><span class="o">=</span><span class="nv">$PWD</span>/interpose_underbar_write.so ./call_fwrite <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span> <span class="p">|</span> grep <span class="s1">&#39;symbol.*write&#39;</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>     11317:	binding file ./call_fwrite [0] to /lib/x86_64-linux-gnu/libc.so.6 [0]: normal symbol `fwrite&#39; [GLIBC_2.2.5]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Can-we-interpose-some-other-function?">Can we interpose some other function?<a class="anchor-link" href="#Can-we-interpose-some-other-function?">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Using <code>strace</code>, we can get the call stack when the <code>write</code> system call is made. Maybe we can interpose one of these other functions?</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>strace -k -e write ./call_fwrite <span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>write(1, &#34;Hello fwrite\n&#34;, 13Hello fwrite
+)          = 13
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(__write+0x14) [0x110154]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(_IO_file_write+0x2d) [0x8b1bd]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(_IO_do_write+0xb1) [0x8cf51]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(_IO_file_overflow+0x103) [0x8d403]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(_IO_default_xsputn+0x74) [0x8e494]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(_IO_file_xsputn+0x103) [0x8ba33]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(fwrite+0xd7) [0x7f977]
+ &gt; /home/jnewsome/projects/dev-journal/interposing-fwrite/interposing-fwrite/call_fwrite(main+0x5b) [0x5bb]
+ &gt; /lib/x86_64-linux-gnu/libc-2.27.so(__libc_start_main+0xe7) [0x21b97]
+ &gt; /home/jnewsome/projects/dev-journal/interposing-fwrite/interposing-fwrite/call_fwrite(_start+0x2a) [0x49a]
++++ exited with 0 +++
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Maybe one of these ends up getting called via the PLT. Let's see what function <em>are</em> called via the PLT inside the glibc library:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-bash"><pre><span></span>objdump -D /lib/x86_64-linux-gnu/libc.so.6 <span class="p">|</span> grep -o <span class="s1">&#39;&lt;.*@plt&gt;&#39;</span> <span class="p">|</span> sort <span class="p">|</span> uniq
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&lt;*ABS*+0x9d790@plt&gt;
+&lt;*ABS*+0x9d7c0@plt&gt;
+&lt;*ABS*+0x9d800@plt&gt;
+&lt;*ABS*+0x9d840@plt&gt;
+&lt;*ABS*+0x9d870@plt&gt;
+&lt;*ABS*+0x9dc70@plt&gt;
+&lt;*ABS*+0x9dca0@plt&gt;
+&lt;*ABS*+0x9dd00@plt&gt;
+&lt;*ABS*+0x9dd40@plt&gt;
+&lt;*ABS*+0x9dd70@plt&gt;
+&lt;*ABS*+0x9dda0@plt&gt;
+&lt;*ABS*+0x9e050@plt&gt;
+&lt;*ABS*+0x9ebe0@plt&gt;
+&lt;*ABS*+0x9ec10@plt&gt;
+&lt;*ABS*+0x9ec70@plt&gt;
+&lt;*ABS*+0x9ed40@plt&gt;
+&lt;*ABS*+0x9ede0@plt&gt;
+&lt;*ABS*+0x9eef0@plt&gt;
+&lt;*ABS*+0x9ef20@plt&gt;
+&lt;*ABS*+0x9ef50@plt&gt;
+&lt;*ABS*+0x9efa0@plt&gt;
+&lt;*ABS*+0x9eff0@plt&gt;
+&lt;*ABS*+0x9f040@plt&gt;
+&lt;*ABS*+0x9f0e0@plt&gt;
+&lt;*ABS*+0xa07c0@plt&gt;
+&lt;*ABS*+0xa07f0@plt&gt;
+&lt;*ABS*+0xa86c0@plt&gt;
+&lt;*ABS*+0xbc0f0@plt&gt;
+&lt;*ABS*+0xbceb0@plt&gt;
+&lt;*ABS*+0xbd410@plt&gt;
+&lt;*ABS*+0xbd4c0@plt&gt;
+&lt;*ABS*+0xbe6c0@plt&gt;
+&lt;*ABS*+0xd2980@plt&gt;
+&lt;*ABS*+0xd2a60@plt&gt;
+&lt;calloc@plt&gt;
+&lt;_dl_exception_create@plt&gt;
+&lt;_dl_find_dso_for_object@plt&gt;
+&lt;free@plt&gt;
+&lt;malloc@plt&gt;
+&lt;memalign@plt&gt;
+&lt;realloc@plt&gt;
+&lt;__tls_get_addr@plt&gt;
+&lt;__tunable_get_val@plt&gt;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>As it turns out, in a normal glibc build, only the memory allocation functions and some opaque implementation details are called via the PLT. Presumably the memory allocation functions are called via the PLT because they're explicitly meant to be overridable. I'm not sure what the other things are. Notably absent are any of the symbols in the <code>__write</code> call stack, above.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="So-what-can-we-do?">So what <em>can</em> we do?<a class="anchor-link" href="#So-what-can-we-do?">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>There are a few way around this.</p>
+<ul>
+<li>Interpose every entry point into glibc that could end up calling the functionality we want to modify. This could work, but developing and maintaining 100% coverage is difficult and fragile. We'd also end up having to reimplement parts of libc. e.g. if we write a wrapper for <code>fwrite</code>, and want to interpose on the individual <code>write</code> system calls, we'd have to reimplement the in-memory buffering that <code>fwrite</code> puts in between the two ourselves (or forgo it).</li>
+<li>Patch glibc to make calls via the PLT, so that we can interpose them via <code>LD_PRELOAD</code>. We could then inject our custom glibc as another <code>LD_PRELOAD</code> library as done <a href="../patching-libc-to-interpose-syscalls">here</a>. This seems like a promising shortcut, but could result in subtle issues if our patched glibc isn't binary-compatible with the headers that the target code was compiled against; e.g. uses different data type or constant definitions. We should be able to prevent those difficulties by being very careful to build our libc consistently with our distribution's libc, but we'd need to do so for every platform we intend to run on.</li>
+<li>Use a different interposition mechanism than <code>LD_PRELOAD</code>. In particular, <code>ptrace</code> tells the OS kernel to intercept the system calls themselves, ensuring that we see every system call regardless of what function it's coming from, whether the program is statically linked, or even if the <code>syscall</code> instructions themselves are inlined. This works best when the behavior we're trying to modify is at the syscall level. It's a bit more work to implement, though. It may also have different performance characteristics, especially if there are other syscalls we're <em>not</em> interested in intercepting. We also can't attach a debugger to a program that is already being <code>ptrace</code>'d, making debugging more difficult.</li>
+</ul>
+
+</div>
+</div>
 </div>
  
 
@@ -2101,168 +1948,11 @@ Second message, priority 0
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 </script>
-                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/interposing-internal-libc-calls/" rel="bookmark"
-                           title="Permalink to Interposing internal libc calls">Interposing internal libc calls</a></h1>
-                </header>
+    </div><!-- /.entry-content -->
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2020-05-05T00:00:00-05:00">
-                Published: Tue 05 May 2020
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Interposing-internal-libc-calls">Interposing internal libc calls<a class="anchor-link" href="#Interposing-internal-libc-calls">&#182;</a></h1><h2 id="TLDR">TLDR<a class="anchor-link" href="#TLDR">&#182;</a></h2><p>Calls within libc are generally pre-linked. As a result, they can't be interposed using <code>LD_PRELOAD</code>. This makes it tricky to use <code>LD_PRELOAD</code> to intercept, e.g., all calls to <code>write</code>, but there are some workarounds.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Doubling-all-writes-to-standard-output">Doubling all writes to standard output<a class="anchor-link" href="#Doubling-all-writes-to-standard-output">&#182;</a></h2><p>Suppose we want to use <code>LD_PRELOAD</code> to force any output to <code>stdout</code>
-                <a class="readmore" href="/posts/interposing-internal-libc-calls/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/patching-glibc-to-make-syscalls-interposable/" rel="bookmark"
-                           title="Permalink to Patching glibc to make its syscalls interposable">Patching glibc to make its syscalls interposable</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2020-05-04T00:00:00-05:00">
-                Published: Mon 04 May 2020
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <h1>Patching glibc to make its syscalls interposable</h1>
-<p>Suppose we have a program, call_write.c, that writes some strings to stdout:</p>
-<div class="highlight"><pre><span></span><code>$ cat ./call_write.c
-#define _GNU_SOURCE
-
-#include &lt;unistd.h&gt;
-#include &lt;sys/syscall.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;string.h&gt;
-
-int main(int argc, char **argv) {
-    const char* msg = &quot;syscall\n&quot;;
-    syscall …</code></pre></div>
-                <a class="readmore" href="/posts/patching-glibc-to-make-syscalls-interposable/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/guinea-pig-guinea-pig/" rel="bookmark"
-                           title="Permalink to Guinea Pig Guinea Pig">Guinea Pig Guinea Pig</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-07-06T18:43:00-05:00">
-                Published: Sat 06 July 2013
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <p><img alt="Guinea Pig Guinea Pig" src="/images/gpgp.png"></p>
-<p>Guinea Pig Guinea Pig is an HTML5 game made for the
-<a href="http://globalgamejam.org/2013/guinea-pig-guinea-pig">2013 Global Game Jam</a>.
-You play a (further) miniaturized, super-powered, Guinea Pig.
-Your job is to weaken (with your eye-lasers, of course) and collect
-the germs infecting the patient's arteries, while contending with
-the rhythmic blood flow.</p>
-<p>Made with …</p>
-                <a class="readmore" href="/posts/guinea-pig-guinea-pig/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/dance-ave/" rel="bookmark"
-                           title="Permalink to Dance Ave">Dance Ave</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-07-06T14:47:00-05:00">
-                Published: Sat 06 July 2013
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <p>I got an interesting request a few months ago--to implement the telephony back-end
-for a real life dancing game to be played at the
-2013 <a href="http://www.3riversartsfest.org/">Three Rivers Arts Festival</a>.</p>
-<p><img alt="Dance Ave" src="/images/dance-ave.jpg"></p>
-<p><a href="http://www.cityofplay.org/traf/">Dance Ave</a>
- is a physical game where players try to reach all of several stations positioned around an area.
-Players may …</p>
-                <a class="readmore" href="/posts/dance-ave/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/in-repository-documentation/" rel="bookmark"
-                           title="Permalink to In-Repository Documentation">In-Repository Documentation</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-07-04T11:31:00-05:00">
-                Published: Wed 04 July 2012
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <h1>Introduction</h1>
-<p>Two popular places to keep documentation for programming projects are:</p>
-<ol>
-<li>In <code>README</code> files in the code repository.</li>
-<li>In a separate wiki.</li>
-</ol>
-<p>In this article, I propose that a compelling way to manage
-documentation is to combine the two: to write the documentation as
-markdown files in the code repository …</p>
-                <a class="readmore" href="/posts/in-repository-documentation/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-                </ol><!-- /#posts-list -->
-                </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="social">
                         <h2>social</h2>

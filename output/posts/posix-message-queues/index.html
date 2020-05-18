@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>jimnewsome.net</title>
+        <title>Poking at POSIX message queues</title>
         <link rel="stylesheet" href="/theme/css/main.css" />
 </head>
 
@@ -12,13 +12,18 @@
                 <nav><ul>
                     <li><a href="/about/">About</a></li>
                     <li><a href="/projects/">Projects</a></li>
-                    <li><a href="/category/misc.html">misc</a></li>
+                    <li class="active"><a href="/category/misc.html">misc</a></li>
                 </ul></nav>
         </header><!-- /#banner -->
+<section id="content" class="body">
+  <article>
+    <header>
+      <h1 class="entry-title">
+        <a href="/posts/posix-message-queues/" rel="bookmark"
+           title="Permalink to Poking at POSIX message queues">Poking at POSIX message queues</a></h1>
+    </header>
 
-            <aside id="featured" class="body">
-                <article>
-                    <h1 class="entry-title"><a href="/posts/posix-message-queues/">Poking at POSIX message queues</a></h1>
+    <div class="entry-content">
 <footer class="post-info">
         <abbr class="published" title="2020-05-10T00:00:00-05:00">
                 Published: Sun 10 May 2020
@@ -29,7 +34,7 @@
         </address>
 <p>In <a href="/category/misc.html">misc</a>.</p>
 
-</footer><!-- /.post-info --><style type="text/css">/*!
+</footer><!-- /.post-info -->      <style type="text/css">/*!
 *
 * IPython notebook
 *
@@ -2101,168 +2106,11 @@ Second message, priority 0
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 </script>
-                </article>
-            </aside><!-- /#featured -->
-                <section id="content" class="body">
-                    <h1>Other articles</h1>
-                    <hr />
-                    <ol id="posts-list" class="hfeed">
 
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/interposing-internal-libc-calls/" rel="bookmark"
-                           title="Permalink to Interposing internal libc calls">Interposing internal libc calls</a></h1>
-                </header>
+    </div><!-- /.entry-content -->
 
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2020-05-05T00:00:00-05:00">
-                Published: Tue 05 May 2020
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Interposing-internal-libc-calls">Interposing internal libc calls<a class="anchor-link" href="#Interposing-internal-libc-calls">&#182;</a></h1><h2 id="TLDR">TLDR<a class="anchor-link" href="#TLDR">&#182;</a></h2><p>Calls within libc are generally pre-linked. As a result, they can't be interposed using <code>LD_PRELOAD</code>. This makes it tricky to use <code>LD_PRELOAD</code> to intercept, e.g., all calls to <code>write</code>, but there are some workarounds.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Doubling-all-writes-to-standard-output">Doubling all writes to standard output<a class="anchor-link" href="#Doubling-all-writes-to-standard-output">&#182;</a></h2><p>Suppose we want to use <code>LD_PRELOAD</code> to force any output to <code>stdout</code>
-                <a class="readmore" href="/posts/interposing-internal-libc-calls/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/patching-glibc-to-make-syscalls-interposable/" rel="bookmark"
-                           title="Permalink to Patching glibc to make its syscalls interposable">Patching glibc to make its syscalls interposable</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2020-05-04T00:00:00-05:00">
-                Published: Mon 04 May 2020
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <h1>Patching glibc to make its syscalls interposable</h1>
-<p>Suppose we have a program, call_write.c, that writes some strings to stdout:</p>
-<div class="highlight"><pre><span></span><code>$ cat ./call_write.c
-#define _GNU_SOURCE
-
-#include &lt;unistd.h&gt;
-#include &lt;sys/syscall.h&gt;
-#include &lt;stdio.h&gt;
-#include &lt;string.h&gt;
-
-int main(int argc, char **argv) {
-    const char* msg = &quot;syscall\n&quot;;
-    syscall …</code></pre></div>
-                <a class="readmore" href="/posts/patching-glibc-to-make-syscalls-interposable/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/guinea-pig-guinea-pig/" rel="bookmark"
-                           title="Permalink to Guinea Pig Guinea Pig">Guinea Pig Guinea Pig</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-07-06T18:43:00-05:00">
-                Published: Sat 06 July 2013
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <p><img alt="Guinea Pig Guinea Pig" src="/images/gpgp.png"></p>
-<p>Guinea Pig Guinea Pig is an HTML5 game made for the
-<a href="http://globalgamejam.org/2013/guinea-pig-guinea-pig">2013 Global Game Jam</a>.
-You play a (further) miniaturized, super-powered, Guinea Pig.
-Your job is to weaken (with your eye-lasers, of course) and collect
-the germs infecting the patient's arteries, while contending with
-the rhythmic blood flow.</p>
-<p>Made with …</p>
-                <a class="readmore" href="/posts/guinea-pig-guinea-pig/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/dance-ave/" rel="bookmark"
-                           title="Permalink to Dance Ave">Dance Ave</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2013-07-06T14:47:00-05:00">
-                Published: Sat 06 July 2013
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <p>I got an interesting request a few months ago--to implement the telephony back-end
-for a real life dancing game to be played at the
-2013 <a href="http://www.3riversartsfest.org/">Three Rivers Arts Festival</a>.</p>
-<p><img alt="Dance Ave" src="/images/dance-ave.jpg"></p>
-<p><a href="http://www.cityofplay.org/traf/">Dance Ave</a>
- is a physical game where players try to reach all of several stations positioned around an area.
-Players may …</p>
-                <a class="readmore" href="/posts/dance-ave/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-
-            <li><article class="hentry">
-                <header>
-                    <h1><a href="/posts/in-repository-documentation/" rel="bookmark"
-                           title="Permalink to In-Repository Documentation">In-Repository Documentation</a></h1>
-                </header>
-
-                <div class="entry-content">
-<footer class="post-info">
-        <abbr class="published" title="2012-07-04T11:31:00-05:00">
-                Published: Wed 04 July 2012
-        </abbr>
-
-        <address class="vcard author">
-                By                         <a class="url fn" href="/author/jim-newsome.html">Jim Newsome</a>
-        </address>
-<p>In <a href="/category/misc.html">misc</a>.</p>
-
-</footer><!-- /.post-info -->                <h1>Introduction</h1>
-<p>Two popular places to keep documentation for programming projects are:</p>
-<ol>
-<li>In <code>README</code> files in the code repository.</li>
-<li>In a separate wiki.</li>
-</ol>
-<p>In this article, I propose that a compelling way to manage
-documentation is to combine the two: to write the documentation as
-markdown files in the code repository …</p>
-                <a class="readmore" href="/posts/in-repository-documentation/">read more</a>
-                </div><!-- /.entry-content -->
-            </article></li>
-                </ol><!-- /#posts-list -->
-                </section><!-- /#content -->
+  </article>
+</section>
         <section id="extras" class="body">
                 <div class="social">
                         <h2>social</h2>

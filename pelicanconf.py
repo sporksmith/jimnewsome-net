@@ -38,6 +38,15 @@ MARKDOWN = {
     'output_format': 'html5',
 }
 
+MARKUP = ('md', 'ipynb')
+
+PLUGIN_PATHS = ['./plugins/pelican-jupyter']
+PLUGINS = ['pelican_jupyter.markup']
+
+# if you create jupyter files in the content dir, snapshots are saved with the same
+# metadata. These need to be ignored.
+IGNORE_FILES = [".ipynb_checkpoints"]
+
 # Feed generation is usually not desired when developing
 FEED_ALL_ATOM = None
 CATEGORY_FEED_ATOM = None
