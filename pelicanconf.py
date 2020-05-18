@@ -6,6 +6,8 @@ AUTHOR = 'Jim Newsome'
 SITENAME = 'jimnewsome.net'
 SITEURL = ''
 
+THEME = 'notmyidea'
+
 PATH = 'source'
 
 ARTICLE_PATHS = ['posts']
