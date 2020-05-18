@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 AUTHOR = 'Jim Newsome'
 SITENAME = 'jimnewsome.net'
-SITEURL = ''
+SITEURL = 'https://www.jimnewsome.net'
 
 THEME = 'notmyidea'
 
@@ -48,7 +48,9 @@ PLUGINS = ['pelican_jupyter.markup']
 IGNORE_FILES = [".ipynb_checkpoints"]
 
 # Feed generation is usually not desired when developing
-FEED_ALL_ATOM = None
+FEED_DOMAIN = SITEURL
+FEED_ALL_ATOM = 'feeds/all.atom.xml'
+TAG_FEED_ATOM = 'feeds/tags/{slug}.atom.xml'
 CATEGORY_FEED_ATOM = None
 TRANSLATION_FEED_ATOM = None
 AUTHOR_FEED_ATOM = None
@@ -69,4 +71,4 @@ SOCIAL = (('Mastodon', 'https://mastodon.social/@sporksmith'),
 DEFAULT_PAGINATION = 10
 
 # Uncomment following line if you want document-relative URLs when developing
-#RELATIVE_URLS = True
+RELATIVE_URLS = True
