@@ -10,7 +10,7 @@ THEME = 'notmyidea'
 
 PATH = 'source'
 OUTPUT_PATH = 'docs/'
-OUTPUT_RETENTION = ['CNAME']
+OUTPUT_RETENTION = ['CNAME', '.nojekyll']
 DELETE_OUTPUT_DIRECTORY = True
 
 ARTICLE_PATHS = ['posts']
