@@ -19,6 +19,7 @@ feedgenerator==1.9.1
 flake8==3.8.1
 idna==2.9
 importlib-metadata==1.6.0
+invoke==1.4.1
 ipykernel==5.2.1
 ipython==7.14.0
 ipython-genutils==0.2.0
