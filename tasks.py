@@ -13,14 +13,16 @@ from pelican.settings import DEFAULT_CONFIG, get_settings_from_file
 SETTINGS_FILE_BASE = 'pelicanconf.py'
 SETTINGS = {}
 SETTINGS.update(DEFAULT_CONFIG)
-LOCAL_SETTINGS = get_settings_from_file(SETTINGS_FILE_BASE)
-SETTINGS.update(LOCAL_SETTINGS)
+SETTINGS.update(get_settings_from_file(SETTINGS_FILE_BASE))
+
+SETTINGS_FILE_PUBLISH = 'publishconf.py'
+SETTINGS_PUBLISH = {}
+SETTINGS_PUBLISH.update(DEFAULT_CONFIG)
+SETTINGS_PUBLISH.update(get_settings_from_file(SETTINGS_FILE_PUBLISH))
 
 CONFIG = {
     'settings_base': SETTINGS_FILE_BASE,
-    'settings_publish': 'publishconf.py',
-    # Output path. Can be absolute or relative to tasks.py. Default: 'output'
-    'deploy_path': SETTINGS['OUTPUT_PATH'],
+    'settings_publish': SETTINGS_FILE_PUBLISH,
     # Github Pages configuration
     'github_pages_branch': 'master',
     'commit_message': "'Publish site on {}'".format(datetime.date.today().isoformat()),
@@ -37,9 +39,10 @@ CONFIG = {
 @task
 def clean(c):
     """Remove generated files"""
-    if os.path.isdir(CONFIG['deploy_path']):
-        shutil.rmtree(CONFIG['deploy_path'])
-        os.makedirs(CONFIG['deploy_path'])
+    for path in (SETTINGS['OUTPUT_PATH'], SETTINGS_PUBLISH['OUTPUT_PATH']):
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+            os.makedirs(path)
 
 @task
 def build(c):
@@ -64,7 +67,7 @@ def serve(c):
         allow_reuse_address = True
 
     server = AddressReuseTCPServer(
-        CONFIG['deploy_path'],
+        SETTINGS['output_path'],
         ('', CONFIG['port']),
         ComplexHTTPRequestHandler)
 
@@ -103,7 +106,7 @@ def livereload(c):
         static_file = '{0}/static/**/*{1}'.format(theme_path, extension)
         server.watch(static_file, lambda: build(c))
     # Serve output path on configured port
-    server.serve(port=CONFIG['port'], root=CONFIG['deploy_path'])
+    server.serve(port=CONFIG['port'], root=SETTINGS['OUTPUT_PATH'])
 
 
 @task
@@ -114,13 +117,5 @@ def publish(c):
         'rsync --delete --exclude ".DS_Store" -pthrvz -c '
         '-e "ssh -p {ssh_port}" '
         '{} {ssh_user}@{ssh_host}:{ssh_path}'.format(
-            CONFIG['deploy_path'].rstrip('/') + '/',
+            SETTINGS_PUBLISH['OUTPUT_PATH'].rstrip('/') + '/',
             **CONFIG))
-
-@task
-def gh_pages(c):
-    """Publish to GitHub Pages"""
-    preview(c)
-    c.run('ghp-import -b {github_pages_branch} '
-          '-m {commit_message} '
-          '{deploy_path} -p'.format(**CONFIG))

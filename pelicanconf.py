@@ -4,12 +4,12 @@ from __future__ import unicode_literals
 
 AUTHOR = 'Jim Newsome'
 SITENAME = 'jimnewsome.net'
-SITEURL = 'https://www.jimnewsome.net'
+SITEURL = 'http://localhost:8000'
 
 THEME = 'notmyidea'
 
 PATH = 'source'
-OUTPUT_PATH = 'docs/'
+OUTPUT_PATH = 'output_local/'
 DELETE_OUTPUT_DIRECTORY = True
 
 ARTICLE_PATHS = ['posts']
@@ -76,4 +76,4 @@ SOCIAL = (('Mastodon', 'https://mastodon.social/@sporksmith'),
 DEFAULT_PAGINATION = 10
 
 # Uncomment following line if you want document-relative URLs when developing
-RELATIVE_URLS = True
+RELATIVE_URLS = False
