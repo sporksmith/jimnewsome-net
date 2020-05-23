@@ -1,4 +1,4 @@
-title: Projects
+title: projects
 date: 2012-08-09 21:04
 
 ## Creative Coding

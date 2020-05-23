@@ -3,7 +3,7 @@
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
 &lt;h1 id="Poking-around-at-POSIX-message-queues-in-Linux"&gt;Poking around at POSIX message queues in Linux&lt;a class="anchor-link" href="#Poking-around-at-POSIX-message-queues-in-Linux"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
-&lt;p&gt;One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have &lt;a href="https://linux.die.net/man/1/ipcmk"&gt;&lt;code&gt;ipcmk&lt;/code&gt;</description><pubDate>Sun, 10 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</guid><category>misc</category></item><item><title>Interposing internal libc calls</title><link>https://www.jimnewsome.net/posts/interposing-internal-libc-calls/</link><description>&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
+&lt;p&gt;One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have &lt;a href="https://linux.die.net/man/1/ipcmk"&gt;&lt;code&gt;ipcmk&lt;/code&gt;</description><pubDate>Sun, 10 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</guid><category>posts</category></item><item><title>Interposing internal libc calls</title><link>https://www.jimnewsome.net/posts/interposing-internal-libc-calls/</link><description>&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
 &lt;h1 id="Interposing-internal-libc-calls"&gt;Interposing internal libc calls&lt;a class="anchor-link" href="#Interposing-internal-libc-calls"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;h2 id="TLDR"&gt;TLDR&lt;a class="anchor-link" href="#TLDR"&gt;&amp;#182;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Calls within libc are generally pre-linked. As a result, they can't be interposed using &lt;code&gt;LD_PRELOAD&lt;/code&gt;. This makes it tricky to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to intercept, e.g., all calls to &lt;code&gt;write&lt;/code&gt;, but there are some workarounds.&lt;/p&gt;
@@ -14,7 +14,7 @@
 &lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
-&lt;h2 id="Doubling-all-writes-to-standard-output"&gt;Doubling all writes to standard output&lt;a class="anchor-link" href="#Doubling-all-writes-to-standard-output"&gt;&amp;#182;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Suppose we want to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to force any output to &lt;code&gt;stdout&lt;/code&gt;</description><pubDate>Tue, 05 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-05:/posts/interposing-internal-libc-calls/</guid><category>misc</category></item><item><title>Patching glibc to make its syscalls interposable</title><link>https://www.jimnewsome.net/posts/patching-glibc-to-make-syscalls-interposable/</link><description>&lt;h1&gt;Patching glibc to make its syscalls interposable&lt;/h1&gt;
+&lt;h2 id="Doubling-all-writes-to-standard-output"&gt;Doubling all writes to standard output&lt;a class="anchor-link" href="#Doubling-all-writes-to-standard-output"&gt;&amp;#182;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Suppose we want to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to force any output to &lt;code&gt;stdout&lt;/code&gt;</description><pubDate>Tue, 05 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-05:/posts/interposing-internal-libc-calls/</guid><category>posts</category></item><item><title>Patching glibc to make its syscalls interposable</title><link>https://www.jimnewsome.net/posts/patching-glibc-to-make-syscalls-interposable/</link><description>&lt;h1&gt;Patching glibc to make its syscalls interposable&lt;/h1&gt;
 &lt;p&gt;Suppose we have a program, call_write.c, that writes some strings to stdout:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$ cat ./call_write.c
 #define _GNU_SOURCE
@@ -26,20 +26,20 @@
 
 int main(int argc, char **argv) {
     const char* msg = &amp;quot;syscall\n&amp;quot;;
-    syscall …&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description><pubDate>Mon, 04 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-04:/posts/patching-glibc-to-make-syscalls-interposable/</guid><category>misc</category></item><item><title>Guinea Pig Guinea Pig</title><link>https://www.jimnewsome.net/posts/guinea-pig-guinea-pig/</link><description>&lt;p&gt;&lt;img alt="Guinea Pig Guinea Pig" src="/images/gpgp.png"&gt;&lt;/p&gt;
+    syscall …&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description><pubDate>Mon, 04 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-04:/posts/patching-glibc-to-make-syscalls-interposable/</guid><category>posts</category></item><item><title>Guinea Pig Guinea Pig</title><link>https://www.jimnewsome.net/posts/guinea-pig-guinea-pig/</link><description>&lt;p&gt;&lt;img alt="Guinea Pig Guinea Pig" src="/images/gpgp.png"&gt;&lt;/p&gt;
 &lt;p&gt;Guinea Pig Guinea Pig is an HTML5 game made for the
 &lt;a href="http://globalgamejam.org/2013/guinea-pig-guinea-pig"&gt;2013 Global Game Jam&lt;/a&gt;.
 You play a (further) miniaturized, super-powered, Guinea Pig.
 Your job is to weaken (with your eye-lasers, of course) and collect
 the germs infecting the patient's arteries, while contending with
 the rhythmic blood flow.&lt;/p&gt;
-&lt;p&gt;Made with …&lt;/p&gt;</description><pubDate>Sat, 06 Jul 2013 18:43:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2013-07-06:/posts/guinea-pig-guinea-pig/</guid><category>misc</category></item><item><title>Dance Ave</title><link>https://www.jimnewsome.net/posts/dance-ave/</link><description>&lt;p&gt;I got an interesting request a few months ago--to implement the telephony back-end
+&lt;p&gt;Made with …&lt;/p&gt;</description><pubDate>Sat, 06 Jul 2013 18:43:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2013-07-06:/posts/guinea-pig-guinea-pig/</guid><category>posts</category></item><item><title>Dance Ave</title><link>https://www.jimnewsome.net/posts/dance-ave/</link><description>&lt;p&gt;I got an interesting request a few months ago--to implement the telephony back-end
 for a real life dancing game to be played at the
 2013 &lt;a href="http://www.3riversartsfest.org/"&gt;Three Rivers Arts Festival&lt;/a&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;img alt="Dance Ave" src="/images/dance-ave.jpg"&gt;&lt;/p&gt;
 &lt;p&gt;&lt;a href="http://www.cityofplay.org/traf/"&gt;Dance Ave&lt;/a&gt;
  is a physical game where players try to reach all of several stations positioned around an area.
-Players may …&lt;/p&gt;</description><pubDate>Sat, 06 Jul 2013 14:47:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2013-07-06:/posts/dance-ave/</guid><category>misc</category></item><item><title>In-Repository Documentation</title><link>https://www.jimnewsome.net/posts/in-repository-documentation/</link><description>&lt;h1&gt;Introduction&lt;/h1&gt;
+Players may …&lt;/p&gt;</description><pubDate>Sat, 06 Jul 2013 14:47:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2013-07-06:/posts/dance-ave/</guid><category>posts</category></item><item><title>In-Repository Documentation</title><link>https://www.jimnewsome.net/posts/in-repository-documentation/</link><description>&lt;h1&gt;Introduction&lt;/h1&gt;
 &lt;p&gt;Two popular places to keep documentation for programming projects are:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;In &lt;code&gt;README&lt;/code&gt; files in the code repository.&lt;/li&gt;
@@ -47,4 +47,4 @@ Players may …&lt;/p&gt;</description><pubDate>Sat, 06 Jul 2013 14:47:00 -0500<
 &lt;/ol&gt;
 &lt;p&gt;In this article, I propose that a compelling way to manage
 documentation is to combine the two: to write the documentation as
-markdown files in the code repository …&lt;/p&gt;</description><pubDate>Wed, 04 Jul 2012 11:31:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2012-07-04:/posts/in-repository-documentation/</guid><category>misc</category></item></channel></rss>
+markdown files in the code repository …&lt;/p&gt;</description><pubDate>Wed, 04 Jul 2012 11:31:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2012-07-04:/posts/in-repository-documentation/</guid><category>posts</category></item></channel></rss>
