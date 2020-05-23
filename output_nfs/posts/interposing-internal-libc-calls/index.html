@@ -1145,7 +1145,7 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */</style><body><div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Interposing-internal-libc-calls">Interposing internal libc calls<a class="anchor-link" href="#Interposing-internal-libc-calls">&#182;</a></h1><h2 id="TLDR">TLDR<a class="anchor-link" href="#TLDR">&#182;</a></h2><p>Calls within libc are generally pre-linked. As a result, they can't be interposed using <code>LD_PRELOAD</code>. This makes it tricky to use <code>LD_PRELOAD</code> to intercept, e.g., all calls to <code>write</code>, but there are some workarounds.</p>
+<p>Calls within libc are generally pre-linked. As a result, they can't be interposed using <code>LD_PRELOAD</code>. This makes it tricky to use <code>LD_PRELOAD</code> to intercept, e.g., all calls to <code>write</code>, but there are some workarounds.</p>
 
 </div>
 </div>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>jimnewsome.net</title><link href="https://www.jimnewsome.net/" rel="alternate"></link><link href="https://www.jimnewsome.net/feeds/all.atom.xml" rel="self"></link><id>https://www.jimnewsome.net/</id><updated>2020-05-10T00:00:00-05:00</updated><entry><title>Poking at POSIX message queues</title><link href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="alternate"></link><published>2020-05-10T00:00:00-05:00</published><updated>2020-05-10T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</id><summary type="html">&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>jimnewsome.net</title><link href="https://www.jimnewsome.net/" rel="alternate"></link><link href="https://www.jimnewsome.net/feeds/all.atom.xml" rel="self"></link><id>https://www.jimnewsome.net/</id><updated>2020-05-10T00:00:00-05:00</updated><entry><title>Poking around at POSIX message queues in Linux</title><link href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="alternate"></link><published>2020-05-10T00:00:00-05:00</published><updated>2020-05-10T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</id><summary type="html">&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
-&lt;h1 id="Poking-around-at-POSIX-message-queues-in-Linux"&gt;Poking around at POSIX message queues in Linux&lt;a class="anchor-link" href="#Poking-around-at-POSIX-message-queues-in-Linux"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
+&lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
 &lt;p&gt;One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have &lt;a href="https://linux.die.net/man/1/ipcmk"&gt;&lt;code&gt;ipcmk&lt;/code&gt;</summary><content type="html">&lt;style type="text/css"&gt;/*!
 *
 * IPython notebook
@@ -1117,7 +1117,7 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */&lt;/style&gt;&lt;body&gt;&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
-&lt;h1 id="Poking-around-at-POSIX-message-queues-in-Linux"&gt;Poking around at POSIX message queues in Linux&lt;a class="anchor-link" href="#Poking-around-at-POSIX-message-queues-in-Linux"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
+&lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
 &lt;p&gt;One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have &lt;a href="https://linux.die.net/man/1/ipcmk"&gt;&lt;code&gt;ipcmk&lt;/code&gt;&lt;/a&gt;, &lt;a href="https://linux.die.net/man/1/ipcrm"&gt;&lt;code&gt;ipcrm&lt;/code&gt;&lt;/a&gt;, and &lt;a href="https://linux.die.net/man/1/ipcs"&gt;&lt;code&gt;ipcs&lt;/code&gt;&lt;/a&gt;. &lt;a href="https://unix.stackexchange.com/a/71045"&gt;Apparently&lt;/a&gt; HP-UX has an analagous tool &lt;code&gt;pipcs&lt;/code&gt;, but it hasn't been ported to other platforms.&lt;/p&gt;
 &lt;p&gt;This is somewhat mitigated by the ability to mount a virtual filesystem representing the message queues on the system, and manipulate them through normal file commands. You must be root to mount the system, but then any user can then use it. &lt;a href="https://linux.die.net/man/7/mq_overview"&gt;&lt;code&gt;mq_overview(7)&lt;/code&gt;&lt;/a&gt; has details, with an example of mounting to &lt;code&gt;/dev/mqueue&lt;/code&gt;. On my system (Ubuntu 18.04), this system appears to be automatically mounted. It's unclear though whether or where you can count on it to already be mounted on other systems.&lt;/p&gt;
 
@@ -2078,7 +2078,7 @@ Second message, priority 0
 </content><category term="posts"></category></entry><entry><title>Interposing internal libc calls</title><link href="https://www.jimnewsome.net/posts/interposing-internal-libc-calls/" rel="alternate"></link><published>2020-05-05T00:00:00-05:00</published><updated>2020-05-05T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-05:/posts/interposing-internal-libc-calls/</id><summary type="html">&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
-&lt;h1 id="Interposing-internal-libc-calls"&gt;Interposing internal libc calls&lt;a class="anchor-link" href="#Interposing-internal-libc-calls"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;h2 id="TLDR"&gt;TLDR&lt;a class="anchor-link" href="#TLDR"&gt;&amp;#182;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Calls within libc are generally pre-linked. As a result, they can't be interposed using &lt;code&gt;LD_PRELOAD&lt;/code&gt;. This makes it tricky to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to intercept, e.g., all calls to &lt;code&gt;write&lt;/code&gt;, but there are some workarounds.&lt;/p&gt;
+&lt;p&gt;Calls within libc are generally pre-linked. As a result, they can't be interposed using &lt;code&gt;LD_PRELOAD&lt;/code&gt;. This makes it tricky to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to intercept, e.g., all calls to &lt;code&gt;write&lt;/code&gt;, but there are some workarounds.&lt;/p&gt;
 
 &lt;/div&gt;
 &lt;/div&gt;
@@ -3200,7 +3200,7 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */&lt;/style&gt;&lt;body&gt;&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
-&lt;h1 id="Interposing-internal-libc-calls"&gt;Interposing internal libc calls&lt;a class="anchor-link" href="#Interposing-internal-libc-calls"&gt;&amp;#182;&lt;/a&gt;&lt;/h1&gt;&lt;h2 id="TLDR"&gt;TLDR&lt;a class="anchor-link" href="#TLDR"&gt;&amp;#182;&lt;/a&gt;&lt;/h2&gt;&lt;p&gt;Calls within libc are generally pre-linked. As a result, they can't be interposed using &lt;code&gt;LD_PRELOAD&lt;/code&gt;. This makes it tricky to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to intercept, e.g., all calls to &lt;code&gt;write&lt;/code&gt;, but there are some workarounds.&lt;/p&gt;
+&lt;p&gt;Calls within libc are generally pre-linked. As a result, they can't be interposed using &lt;code&gt;LD_PRELOAD&lt;/code&gt;. This makes it tricky to use &lt;code&gt;LD_PRELOAD&lt;/code&gt; to intercept, e.g., all calls to &lt;code&gt;write&lt;/code&gt;, but there are some workarounds.&lt;/p&gt;
 
 &lt;/div&gt;
 &lt;/div&gt;
@@ -4000,8 +4000,7 @@ ssize_t __write(int fd, const void *buf, size_t count) {
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 &lt;/script&gt;
-</content><category term="posts"></category></entry><entry><title>Patching glibc to make its syscalls interposable</title><link href="https://www.jimnewsome.net/posts/patching-glibc-to-make-syscalls-interposable/" rel="alternate"></link><published>2020-05-04T00:00:00-05:00</published><updated>2020-05-04T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-04:/posts/patching-glibc-to-make-syscalls-interposable/</id><summary type="html">&lt;h1&gt;Patching glibc to make its syscalls interposable&lt;/h1&gt;
-&lt;p&gt;Suppose we have a program, call_write.c, that writes some strings to stdout:&lt;/p&gt;
+</content><category term="posts"></category></entry><entry><title>Patching glibc to make its syscalls interposable</title><link href="https://www.jimnewsome.net/posts/patching-glibc-to-make-syscalls-interposable/" rel="alternate"></link><published>2020-05-04T00:00:00-05:00</published><updated>2020-05-04T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-04:/posts/patching-glibc-to-make-syscalls-interposable/</id><summary type="html">&lt;p&gt;Suppose we have a program, call_write.c, that writes some strings to stdout:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$ cat ./call_write.c
 #define _GNU_SOURCE
 
@@ -4012,8 +4011,9 @@ ssize_t __write(int fd, const void *buf, size_t count) {
 
 int main(int argc, char **argv) {
     const char* msg = &amp;quot;syscall\n&amp;quot;;
-    syscall …&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</summary><content type="html">&lt;h1&gt;Patching glibc to make its syscalls interposable&lt;/h1&gt;
-&lt;p&gt;Suppose we have a program, call_write.c, that writes some strings to stdout:&lt;/p&gt;
+    syscall(SYS_write, STDOUT_FILENO, msg, strlen(msg));
+
+    msg = &amp;quot;write …&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</summary><content type="html">&lt;p&gt;Suppose we have a program, call_write.c, that writes some strings to stdout:&lt;/p&gt;
 &lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;$ cat ./call_write.c
 #define _GNU_SOURCE
 

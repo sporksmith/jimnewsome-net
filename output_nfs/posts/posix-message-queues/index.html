@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
         <meta charset="utf-8" />
-        <title>Poking at POSIX message queues</title>
+        <title>Poking around at POSIX message queues in Linux</title>
         <link rel="stylesheet" href="https://www.jimnewsome.net/theme/css/main.css" />
         <link href="https://www.jimnewsome.net/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="jimnewsome.net Atom Feed" />
 </head>
@@ -20,7 +20,7 @@
     <header>
       <h1 class="entry-title">
         <a href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="bookmark"
-           title="Permalink to Poking at POSIX message queues">Poking at POSIX message queues</a></h1>
+           title="Permalink to Poking around at POSIX message queues in Linux">Poking around at POSIX message queues in Linux</a></h1>
     </header>
 
     <div class="entry-content">
@@ -1145,7 +1145,7 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */</style><body><div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Poking-around-at-POSIX-message-queues-in-Linux">Poking around at POSIX message queues in Linux<a class="anchor-link" href="#Poking-around-at-POSIX-message-queues-in-Linux">&#182;</a></h1><p>I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.</p>
+<p>I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.</p>
 <p>One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have <a href="https://linux.die.net/man/1/ipcmk"><code>ipcmk</code></a>, <a href="https://linux.die.net/man/1/ipcrm"><code>ipcrm</code></a>, and <a href="https://linux.die.net/man/1/ipcs"><code>ipcs</code></a>. <a href="https://unix.stackexchange.com/a/71045">Apparently</a> HP-UX has an analagous tool <code>pipcs</code>, but it hasn't been ported to other platforms.</p>
 <p>This is somewhat mitigated by the ability to mount a virtual filesystem representing the message queues on the system, and manipulate them through normal file commands. You must be root to mount the system, but then any user can then use it. <a href="https://linux.die.net/man/7/mq_overview"><code>mq_overview(7)</code></a> has details, with an example of mounting to <code>/dev/mqueue</code>. On my system (Ubuntu 18.04), this system appears to be automatically mounted. It's unclear though whether or where you can count on it to already be mounted on other systems.</p>
 

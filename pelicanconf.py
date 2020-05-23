@@ -45,6 +45,9 @@ MARKUP = ('md', 'ipynb')
 
 PLUGIN_PATHS = ['./plugins/pelican-jupyter']
 PLUGINS = ['pelican_jupyter.markup']
+IPYNB_MARKUP_USE_FIRST_CELL = True
+IPYNB_SKIP_CSS = False
+IPYNB_FIX_CSS = True
 
 # if you create jupyter files in the content dir, snapshots are saved with the same
 # metadata. These need to be ignored.
