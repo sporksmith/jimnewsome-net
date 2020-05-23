@@ -26,6 +26,12 @@ CONFIG = {
     'commit_message': "'Publish site on {}'".format(datetime.date.today().isoformat()),
     # Port for `serve`
     'port': 8000,
+
+    # For rsync deployment
+    'ssh_host': 'ssh.phx.nearlyfreespeech.net',
+    'ssh_user': 'jnewsome_jimnewsome',
+    'ssh_port': 22,
+    'ssh_path': '/home/public/'
 }
 
 @task
