@@ -4,3 +4,9 @@
 [submodule "plugins/pelican-jupyter"]
 	path = plugins/pelican-jupyter
 	url = https://github.com/danielfrg/pelican-jupyter.git
+[submodule "themes/pelican-blueidea"]
+	path = themes/pelican-blueidea
+	url = git@github.com:nasskach/pelican-blueidea.git
+[submodule "themes/pelican-themes"]
+	path = themes/pelican-themes
+	url = https://github.com/getpelican/pelican-themes

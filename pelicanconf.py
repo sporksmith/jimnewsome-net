@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*- #
 from __future__ import unicode_literals
 
-AUTHOR = 'Jim Newsome'
+#AUTHOR = 'Jim Newsome'
 SITENAME = 'jimnewsome.net'
 SITEURL = 'http://localhost:8000'
 
+#THEME = 'themes/pelican-themes/notmyidea-cms'
 THEME = 'notmyidea'
 
 PATH = 'source'
