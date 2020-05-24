@@ -112,13 +112,13 @@ def livereload(c):
 @task
 def publish(c):
     """Publish to production via rsync"""
+    path=SETTINGS_PUBLISH['OUTPUT_PATH'].rstrip('/') + '/'
     c.run('pelican -s {settings_publish}'.format(**CONFIG))
+    c.run('find {} -type f | xargs ./tools/reset-mtimes.sh'.format(path))
     c.run(
         'rsync --delete '
         '--exclude ".DS_Store" '
         '--exclude ".well-known" '
         '-pthrvz -c '
         '-e "ssh -p {ssh_port}" '
-        '{} {ssh_user}@{ssh_host}:{ssh_path}'.format(
-            SETTINGS_PUBLISH['OUTPUT_PATH'].rstrip('/') + '/',
-            **CONFIG))
+        '{} {ssh_user}@{ssh_host}:{ssh_path}'.format(path, **CONFIG))
