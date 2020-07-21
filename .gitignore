@@ -16,3 +16,4 @@ node_modules
 *.pyc
 __pycache__
 output_local
+.ipynb_checkpoints
