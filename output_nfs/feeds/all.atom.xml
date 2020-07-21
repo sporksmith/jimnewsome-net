@@ -2172,32 +2172,7 @@ cannot return value referencing temporary value&lt;/pre&gt;
     (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
 }
 &lt;/script&gt;
-</content><category term="posts"></category></entry><entry><title>Preserving mtimes in Pelican</title><link href="https://www.jimnewsome.net/posts/pelican-preserving-mtimes/" rel="alternate"></link><published>2020-05-24T00:00:00-05:00</published><updated>2020-05-24T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-24:/posts/pelican-preserving-mtimes/</id><summary type="html">&lt;p&gt;With &lt;a href="https://blog.getpelican.com/"&gt;Pelican&lt;/a&gt;, and probably other
-static site generators, rebuilding the site regenerates every output
-file.&lt;/p&gt;
-&lt;p&gt;That sets their mtime (modification time) to the current time.&lt;/p&gt;
-&lt;p&gt;That means when deploying to the server with rsync, rsync's heuristic of
-comparing sizes and mtimes detects that every file has changed. Delta
-compression means …&lt;/p&gt;</summary><content type="html">&lt;p&gt;With &lt;a href="https://blog.getpelican.com/"&gt;Pelican&lt;/a&gt;, and probably other
-static site generators, rebuilding the site regenerates every output
-file.&lt;/p&gt;
-&lt;p&gt;That sets their mtime (modification time) to the current time.&lt;/p&gt;
-&lt;p&gt;That means when deploying to the server with rsync, rsync's heuristic of
-comparing sizes and mtimes detects that every file has changed. Delta
-compression means it still won't end up sending the actual contents of
-unchanged files over the wire, but now both sides need to compute checksums of
-every file.&lt;/p&gt;
-&lt;p&gt;It also means the server-side mtimes get updated as well. This can further
-defeat other caching mechanisms, such as the
-&lt;a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since"&gt;If-Modified-Since&lt;/a&gt;
-HTTP request header.&lt;/p&gt;
-&lt;h2&gt;Getting mtimes from git&lt;/h2&gt;
-&lt;p&gt;I keep my static site &lt;em&gt;and&lt;/em&gt; generated output in a git repo, so I hacked up a
-script to reset the mtimes to the date of the last commit where the content
-changed before rsync'ing. This currently takes &lt;em&gt;more&lt;/em&gt; total time than just
-rsync'ing---I think due to doing a linear search through git's history for each
-file---but does at least save the&lt;/p&gt;
-&lt;h2&gt;Using a shallow git repo&lt;/h2&gt;</content><category term="posts"></category></entry><entry><title>Poking around at POSIX message queues in Linux</title><link href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="alternate"></link><published>2020-05-10T00:00:00-05:00</published><updated>2020-05-10T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</id><summary type="html">&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
+</content><category term="posts"></category></entry><entry><title>Poking around at POSIX message queues in Linux</title><link href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="alternate"></link><published>2020-05-10T00:00:00-05:00</published><updated>2020-05-10T00:00:00-05:00</updated><author><name></name></author><id>tag:www.jimnewsome.net,2020-05-10:/posts/posix-message-queues/</id><summary type="html">&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
 &lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;

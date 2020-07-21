@@ -3,13 +3,7 @@
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
 &lt;p&gt;We are beginning to write new &lt;a href="https://shadow.github.io/"&gt;Shadow&lt;/a&gt; code in Rust instead of C. Before we get too far, we need to work out how to make Shadow's data structures play along with Rust's ownership models.&lt;/p&gt;
-&lt;p&gt;Conceptually, Shadow models many Hosts, each with multiple Processes, each with multiple Threads. These objects often need to access each-other; and sometimes need to mutate each-other. Ownership is &lt;em&gt;mostly&lt;/em&gt;</description><pubDate>Tue, 21 Jul 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-07-21:/posts/heterogenous-object-graphs-in-rust/</guid><category>posts</category></item><item><title>Preserving mtimes in Pelican</title><link>https://www.jimnewsome.net/posts/pelican-preserving-mtimes/</link><description>&lt;p&gt;With &lt;a href="https://blog.getpelican.com/"&gt;Pelican&lt;/a&gt;, and probably other
-static site generators, rebuilding the site regenerates every output
-file.&lt;/p&gt;
-&lt;p&gt;That sets their mtime (modification time) to the current time.&lt;/p&gt;
-&lt;p&gt;That means when deploying to the server with rsync, rsync's heuristic of
-comparing sizes and mtimes detects that every file has changed. Delta
-compression means …&lt;/p&gt;</description><pubDate>Sun, 24 May 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-05-24:/posts/pelican-preserving-mtimes/</guid><category>posts</category></item><item><title>Poking around at POSIX message queues in Linux</title><link>https://www.jimnewsome.net/posts/posix-message-queues/</link><description>&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
+&lt;p&gt;Conceptually, Shadow models many Hosts, each with multiple Processes, each with multiple Threads. These objects often need to access each-other; and sometimes need to mutate each-other. Ownership is &lt;em&gt;mostly&lt;/em&gt;</description><pubDate>Tue, 21 Jul 2020 00:00:00 -0500</pubDate><guid isPermaLink="false">tag:www.jimnewsome.net,2020-07-21:/posts/heterogenous-object-graphs-in-rust/</guid><category>posts</category></item><item><title>Poking around at POSIX message queues in Linux</title><link>https://www.jimnewsome.net/posts/posix-message-queues/</link><description>&lt;div class="cell border-box-sizing text_cell rendered"&gt;&lt;div class="prompt input_prompt"&gt;
 &lt;/div&gt;&lt;div class="inner_cell"&gt;
 &lt;div class="text_cell_render border-box-sizing rendered_html"&gt;
 &lt;p&gt;I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.&lt;/p&gt;
