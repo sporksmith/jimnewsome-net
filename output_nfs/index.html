@@ -18,10 +18,10 @@
 
             <aside id="featured" class="body">
                 <article>
-                    <h1 class="entry-title"><a href="https://www.jimnewsome.net/posts/posix-message-queues/">Poking around at POSIX message queues in Linux</a></h1>
+                    <h1 class="entry-title"><a href="https://www.jimnewsome.net/posts/heterogenous-object-graphs-in-rust/">Heterogenous object graphs in Rust</a></h1>
 <footer class="post-info">
-        <abbr class="published" title="2020-05-10T00:00:00-05:00">
-                Published: Sun 10 May 2020
+        <abbr class="published" title="2020-07-21T00:00:00-05:00">
+                Published: Tue 21 July 2020
         </abbr>
 
 <p>In <a href="https://www.jimnewsome.net/category/posts.html">posts</a>.</p>
@@ -1140,64 +1140,11 @@ h6:hover .anchor-link {
  .highlight pre  .il { color: #666666 } /* Literal.Number.Integer.Long */</style><body><div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.</p>
-<p>One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have <a href="https://linux.die.net/man/1/ipcmk"><code>ipcmk</code></a>, <a href="https://linux.die.net/man/1/ipcrm"><code>ipcrm</code></a>, and <a href="https://linux.die.net/man/1/ipcs"><code>ipcs</code></a>. <a href="https://unix.stackexchange.com/a/71045">Apparently</a> HP-UX has an analagous tool <code>pipcs</code>, but it hasn't been ported to other platforms.</p>
-<p>This is somewhat mitigated by the ability to mount a virtual filesystem representing the message queues on the system, and manipulate them through normal file commands. You must be root to mount the system, but then any user can then use it. <a href="https://linux.die.net/man/7/mq_overview"><code>mq_overview(7)</code></a> has details, with an example of mounting to <code>/dev/mqueue</code>. On my system (Ubuntu 18.04), this system appears to be automatically mounted. It's unclear though whether or where you can count on it to already be mounted on other systems.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Creating-a-queue">Creating a queue<a class="anchor-link" href="#Creating-a-queue">&#182;</a></h2><p>We can create a queue using normal file system APIs. Let's use <code>mktemp</code> to generate a unique name for this example:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[1]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nv">QFILE</span><span class="o">=</span><span class="sb">`</span>mktemp /dev/mqueue/mqtest.XXXX<span class="sb">`</span>
-<span class="nb">echo</span> <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>/dev/mqueue/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Examining-a-queue">Examining a queue<a class="anchor-link" href="#Examining-a-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can <code>ls</code> it, though this doesn't tell us much:</p>
+<p>We are beginning to write new <a href="https://shadow.github.io/">Shadow</a> code in Rust instead of C. Before we get too far, we need to work out how to make Shadow's data structures play along with Rust's ownership models.</p>
+<p>Conceptually, Shadow models many Hosts, each with multiple Processes, each with multiple Threads. These objects often need to access each-other; and sometimes need to mutate each-other. Ownership is <em>mostly</em> a tree, but occasionally references need to be stored outside the tree; e.g. in event objects that are stored in scheduler queues. Because of this, most objects have reference counts that are maintained manually.</p>
+<p>Most of the simulation works without locking - safety is maintained by manually ensuring that a Host is the root of a partitioned graph of an objects, such that handing a Host over to a worker threads doesn't leave any pointers behind that might be accessed by some other thread.</p>
+<p>How can we model these objects and their relationships in Rust?</p>
+<h2 id="Using-raw-pointers">Using raw pointers<a class="anchor-link" href="#Using-raw-pointers">&#182;</a></h2><p>Let's start by directly translating the existing structure. We'll start with just sketching out <code>Host</code>:</p>
 
 </div>
 </div>
@@ -1207,28 +1154,40 @@ h6:hover .anchor-link {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>ls -l <span class="nv">$QFILE</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">literal_translation</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ref_count</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="n">Process</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">fn</span> <span class="nf">host_new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Allocate a pointer on the heap, and then convert to a raw pointer.</span>
+<span class="w">        </span><span class="nb">Box</span>::<span class="n">into_raw</span><span class="p">(</span><span class="nb">Box</span>::<span class="n">new</span><span class="p">(</span><span class="n">Host</span><span class="p">{</span><span class="n">ref_count</span>: <span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">processes</span>: <span class="nc">HashMap</span>::<span class="n">new</span><span class="p">()}))</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">unsafe</span><span class="w"> </span><span class="k">fn</span> <span class="nf">host_inc</span><span class="p">(</span><span class="n">hostp</span><span class="w"> </span>: <span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="n">Host</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">host</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Host</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="o">*</span><span class="n">hostp</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="p">.</span><span class="n">ref_count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">unsafe</span><span class="w"> </span><span class="k">fn</span> <span class="nf">host_dec</span><span class="p">(</span><span class="n">hostp</span><span class="w"> </span>: <span class="o">*</span><span class="k">mut</span><span class="w"> </span><span class="n">Host</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">host</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Host</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="o">*</span><span class="n">hostp</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="p">.</span><span class="n">ref_count</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="n">host</span><span class="p">.</span><span class="n">ref_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Transfer ownership into the Box object and let it get dropped.</span>
+<span class="w">            </span><span class="nb">Box</span>::<span class="n">from_raw</span><span class="p">(</span><span class="n">hostp</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>-rw------- 1 jnewsome jnewsome 80 May 11 08:49 /dev/mqueue/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -1236,7 +1195,7 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We can <code>cat</code> it, giving some metadata about the state of the queue:</p>
+<h2 id="Using-Rc-(reference-counted-objects)">Using Rc (reference counted objects)<a class="anchor-link" href="#Using-Rc-(reference-counted-objects)">&#182;</a></h2><p>A seemingly obvious improvement is to use Rust's reference counting instead of doing it manually. We don't want to introduce synchronization here, so we'll start with <code>Rc</code>. While we're at it, let's replace <code>host_new</code> with a more idiomatic <code>Host::new</code>:</p>
 
 </div>
 </div>
@@ -1246,76 +1205,68 @@ h6:hover .anchor-link {
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">using_rc</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// We now store ref-counted Process objects instead of raw pointers.</span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Our idiomatic constructor returns a literal Host objects; it&#39;s up to the caller</span>
+<span class="w">        </span><span class="c1">// to move that into an Rc&lt;Host&gt;.</span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="p">{</span><span class="n">processes</span>: <span class="nc">HashMap</span>::<span class="n">new</span><span class="p">()}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="c1">// Increment and decrement no longer needed!</span>
+<span class="w">    </span>
+<span class="w">   </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:0          NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>To get more information, we'll need to use the C api.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>The C APIs take a queue name, not the the file system path. The queue name is the basename of the path, with a leading <code>/</code>:</p>
+<h2 id="Storing-references">Storing references<a class="anchor-link" href="#Storing-references">&#182;</a></h2><p>Unfortunately things get complicated when a <code>Process</code> needs to access the <code>Host</code> to which it belongs. Let's try the simplest thing that might work: storing a reference. We have to do add some lifetime specifiers as a result, effectively telling Rust that the <code>Host</code> must outlive the <code>Process</code>, which seems reasonable enough. We can get the structure definitions and <code>Process::new</code> to compile:</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nv">QNAME</span><span class="o">=</span><span class="s2">&quot;/</span><span class="k">$(</span>basename <span class="nv">$QFILE</span><span class="k">)</span><span class="s2">&quot;</span>
-<span class="nb">echo</span> <span class="nv">$QNAME</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">ref_to_parent</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">host</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>/mqtest.OBmQ
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -1323,7 +1274,7 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's write a small shell function to compile our test programs. It'll take the program source from <code>stdin</code>:</p>
+<p>Once we actually try to spawn a new process, though, we run into trouble:</p>
 
 </div>
 </div>
@@ -1333,12 +1284,80 @@ h6:hover .anchor-link {
 <div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile <span class="o">()</span> <span class="o">{</span>
-  gcc -o <span class="nv">$1</span> -xc -Wall -Werror - -lrt
-<span class="o">}</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">ref_to_parent</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">host</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+            self.processes.insert(self.next_pid, Rc::new(Process::new(self)));
+<span class="ansi-red-intense-fg">            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">mutable borrow occurs here</span>
+            self.processes.insert(self.next_pid, Rc::new(Process::new(self)));
+<span class="ansi-red-intense-fg">                                                                      ^^^^</span> <span class="ansi-blue-intense-fg">immutable borrow occurs here</span>
+    impl&lt;&#39;a&gt; Host&lt;&#39;a&gt; {
+<span class="ansi-red-intense-fg">         ^^</span> <span class="ansi-blue-intense-fg">lifetime `&#39;a` defined here</span>
+            self.processes.insert(self.next_pid, Rc::new(Process::new(self)));
+<span class="ansi-red-intense-fg">                                                         ^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">argument requires that `*self` is borrowed for `&#39;a`</span>
+cannot borrow `self.processes` as mutable because it is also borrowed as immutable</pre>
+</div>
+</div>
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+            self.processes.insert(self.next_pid, Rc::new(Process::new(self)));
+<span class="ansi-red-intense-fg">                                                                      ^^^^</span> <span class="ansi-blue-intense-fg">borrow of `self.next_pid` occurs here</span>
+            self.next_pid += 1;
+<span class="ansi-red-intense-fg">            ^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">assignment to borrowed `self.next_pid` occurs here</span>
+    impl&lt;&#39;a&gt; Host&lt;&#39;a&gt; {
+<span class="ansi-red-intense-fg">         ^^</span> <span class="ansi-blue-intense-fg">lifetime `&#39;a` defined here</span>
+            self.processes.insert(self.next_pid, Rc::new(Process::new(self)));
+<span class="ansi-red-intense-fg">                                                         ^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">argument requires that `*self` is borrowed for `&#39;a`</span>
+cannot assign to `self.next_pid` because it is borrowed</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -1346,7 +1365,7 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Our helper programs are going to have a common preamble. Let's stick those in a shell variable:</p>
+<p>Rust prevents a mutable reference and an immutable reference to a single object from existing at the same time. If we want to store a reference in a <code>Process</code> to its <code>Host</code>, we can never create a mutable reference to <code>Host</code> again. We can get a bit further though with <em>interior mutability</em> - putting any mutations that need to happen inside a guarded data structure, such as <code>RefCell</code>, such that those operations can be done from an <em>immutable</em> reference.</p>
 
 </div>
 </div>
@@ -1356,28 +1375,65 @@ h6:hover .anchor-link {
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">read</span> -r -d <span class="s1">&#39;&#39;</span> C_PRELIMINARIES <span class="s">&lt;&lt; EOM</span>
-<span class="s">#include &lt;fcntl.h&gt;</span>
-<span class="s">#include &lt;sys/stat.h&gt;</span>
-<span class="s">#include &lt;mqueue.h&gt;</span>
-<span class="s">#include &lt;stdio.h&gt;</span>
-<span class="s">#include &lt;stdlib.h&gt;</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">ref_to_parent_with_refcell</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="n">RefCell</span><span class="p">;</span><span class="w"></span>
 
-<span class="s">#define CHECK(x) { \</span>
-<span class="s">  if (!(x)) {\</span>
-<span class="s">    perror(#x);\</span>
-<span class="s">    exit(EXIT_FAILURE);\</span>
-<span class="s">  }\</span>
-<span class="s">}</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="kt">i32</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">().</span><span class="n">insert</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow</span><span class="p">(),</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="o">*</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">()</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">struct</span> <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">parent</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span>: <span class="nc">parent</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 
-<span class="s">#define CHECK_GTE0(x) CHECK((x) &gt;= 0)</span>
-<span class="s">#define CHECK_EQ0(x) CHECK((x) == 0)</span>
-
-<span class="s">EOM</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">ref_to_parent_with_refcell</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">h</span><span class="p">.</span><span class="n">spawn_process</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[6]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>()</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -1385,7 +1441,7 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now let's write and compile our <code>mq_getattr</code> program:</p>
+<p>How does Rust actually prevent the reference from process to host from dangling? Let's try it and see where things go wrong.</p>
 
 </div>
 </div>
@@ -1395,23 +1451,77 @@ h6:hover .anchor-link {
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_getattr <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">drop_ref_to_parent_with_refcell</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="n">RefCell</span><span class="p">;</span><span class="w"></span>
 
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(argv[1], O_RDONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  printf(&quot;flags: %ld\n&quot;, attr.mq_flags);</span>
-<span class="s">  printf(&quot;maxmsg: %ld\n&quot;, attr.mq_maxmsg);</span>
-<span class="s">  printf(&quot;msgsize: %ld\n&quot;, attr.mq_msgsize);</span>
-<span class="s">  printf(&quot;curmsgs: %ld\n&quot;, attr.mq_curmsgs);</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="kt">i32</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">().</span><span class="n">insert</span><span class="p">(</span><span class="o">*</span><span class="n">next_pid</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">next_pid</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="o">*</span><span class="n">next_pid</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">get_process</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pid</span><span class="p">).</span><span class="n">unwrap</span><span class="p">().</span><span class="n">clone</span><span class="p">()</span><span class="w">            </span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">pid</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">parent</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span>: <span class="nc">parent</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">drop_ref_to_parent_with_refcell</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">_p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="n">h</span><span class="p">.</span><span class="n">spawn_process</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="n">h</span><span class="p">.</span><span class="n">get_process</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+      h.spawn_process();
+<span class="ansi-red-intense-fg">      ^</span> <span class="ansi-blue-intense-fg">borrowed value does not live long enough</span>
+    };
+<span class="ansi-red-intense-fg">    ^</span> <span class="ansi-blue-intense-fg">`h` dropped here while still borrowed</span>
+    let _p = {
+<span class="ansi-red-intense-fg">        ^^</span> <span class="ansi-blue-intense-fg">borrow later stored here</span>
+`h` does not live long enough</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -1419,17 +1529,169 @@ h6:hover .anchor-link {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Running it gives us some new information about the queue:</p>
+<p>Ah ha - because the <code>Process</code>'s type is parameterized with its <code>Host</code>'s lifetime, Rust won't allow a <code>Process</code> object to outlive its <code>Host</code>.</p>
+<p>I suspect we'd run into trouble though proving to the compiler that this constraint is satisfied. Interestingly, it looks like if we implement the drop trait, the host becomes undroppable after calling <code>spawn_process</code>:</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">drop_ref_to_parent_with_refcell</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="n">RefCell</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="kt">i32</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">().</span><span class="n">insert</span><span class="p">(</span><span class="o">*</span><span class="n">next_pid</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">next_pid</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="o">*</span><span class="n">next_pid</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">get_process</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pid</span><span class="p">).</span><span class="n">unwrap</span><span class="p">().</span><span class="n">clone</span><span class="p">()</span><span class="w">            </span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="nb">Drop</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">drop</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Dropped host!&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">pid</span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">parent</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="n">Host</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span>: <span class="nc">parent</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">drop_ref_to_parent_with_refcell</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">h</span><span class="p">.</span><span class="n">spawn_process</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+    h.spawn_process();
+<span class="ansi-red-intense-fg">    ^</span> <span class="ansi-blue-intense-fg">borrowed value does not live long enough</span>
+}
+<span class="ansi-red-intense-fg">^</span> <span class="ansi-blue-intense-fg">`h` dropped here while still borrowed</span>
+}
+<span class="ansi-red-intense-fg">^</span> <span class="ansi-blue-intense-fg">borrow might be used here, when `h` is dropped and runs the `Drop` code for type `drop_ref_to_parent_with_refcell::Host`</span>
+`h` does not live long enough</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Storing-weak-pointers">Storing weak pointers<a class="anchor-link" href="#Storing-weak-pointers">&#182;</a></h2><p>We could relax the static constraints by having the <code>Process</code> store an <code>Rc&lt;Host&gt;</code> instead of a <code>&amp;Host</code>. This is closer to what we do in current Shadow code; it introduces a cycle in the object graph, but we break that cycle when tearing down a <code>Host</code> by clearing its references to its <code>Process</code>es.</p>
+<p>In Rust it's probably better to store a <code>Weak&lt;Host&gt;</code> instead. This ensures we don't have a cycle in the graph, but forces the <code>Process</code> to do a (cheap) <code>upgrade</code> to an <code>Rc&lt;Host&gt;</code> before it can actually operate on it.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">weak_ref</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="p">{</span><span class="n">Rc</span><span class="p">,</span><span class="w"> </span><span class="n">Weak</span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="n">RefCell</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="kt">i32</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">get_process</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Rc</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pid</span><span class="p">).</span><span class="n">unwrap</span><span class="p">().</span><span class="n">clone</span><span class="p">()</span><span class="w">            </span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Implementing Drop is now ok.</span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="nb">Drop</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">drop</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Dropped host!&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="c1">// To create a weak reference for the host, we need its `Rc` wrapper; `self` is insufficient.</span>
+<span class="w">    </span><span class="c1">// Since passing `self` would be redundant (and an opportunity to provide inconsistent inputs),</span>
+<span class="w">    </span><span class="c1">// I pulled this out to a standalone function.</span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="n">host</span>: <span class="kp">&amp;</span><span class="nc">Rc</span><span class="o">&lt;</span><span class="n">Host</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">weak</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">downgrade</span><span class="p">(</span><span class="n">host</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">().</span><span class="n">insert</span><span class="p">(</span><span class="o">*</span><span class="n">host</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow</span><span class="p">(),</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="n">weak</span><span class="p">)));</span><span class="w"></span>
+<span class="w">        </span><span class="o">*</span><span class="n">host</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">()</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span>: <span class="nc">Weak</span><span class="o">&lt;</span><span class="n">Host</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">parent</span><span class="w"> </span>: <span class="nc">Weak</span><span class="o">&lt;</span><span class="n">Host</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">host</span>: <span class="nc">parent</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">run</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// We need to upgrade the weak pointer to an Rc pointer. The `unwrap` will panic</span>
+<span class="w">            </span><span class="c1">// at runtime if the `Host` no longer exists.</span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">host</span><span class="p">.</span><span class="n">upgrade</span><span class="p">().</span><span class="n">unwrap</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Process method, accessing Host. Host&#39;s next_pid: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">h</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">weak_ref</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="n">m</span>::<span class="n">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="n">host</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">process</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">host</span><span class="p">.</span><span class="n">get_process</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">process</span><span class="p">.</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
@@ -1446,58 +1708,23 @@ h6:hover .anchor-link {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 0
+<pre>Process method, accessing Host. Host&#39;s next_pid: 1
+Dropped host!
 </pre>
 </div>
 </div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Writing-to-the-queue">Writing to the queue<a class="anchor-link" href="#Writing-to-the-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Unfortunately there doesn't seem to be a way to write messages to the queue via the file system API. At least, attempting to do so in the obvious way fails:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">echo</span> <span class="s2">&quot;A message&quot;</span> &gt; <span class="nv">$QFILE</span> <span class="o">||</span> <span class="nb">true</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
 
 <div class="output_area">
 
-    <div class="prompt"></div>
+    <div class="prompt output_prompt">Out[5]:</div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>bash: echo: write error: Invalid argument
-</pre>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>()</pre>
 </div>
+
 </div>
 
 </div>
@@ -1507,7 +1734,7 @@ curmsgs: 0
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's write another small program that'll read up to the maximum message length from <code>stdin</code>, and then write it to the queue with a specified priority:</p>
+<h2 id="What-about-threads?">What about threads?<a class="anchor-link" href="#What-about-threads?">&#182;</a></h2><p>So far all of the above doesn't use any locks. There are some run-time checks in <code>Rc</code> and <code>RefCell</code>, but they are lockless. <code>RefCell</code> <em>does</em> implement <code>Send</code>, meaning we can <em>transfer</em> it and its containing structs between threads, but <code>Rc</code> implements neither <code>Send</code> nor <code>Sync</code>. An <code>Rc</code> can't be transferred between threads because there could be other outstanding <code>Weak</code> or <code>Rc</code> objects referring to the same underlying data, and it wouldn't be safe to have those being accessed by different threads.</p>
 
 </div>
 </div>
@@ -1517,71 +1744,18 @@ curmsgs: 0
 <div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_send <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
-
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  CHECK(argc == 3);</span>
-<span class="s">  const char* qname = argv[1];</span>
-<span class="s">  unsigned int priority = atoi(argv[2]);</span>
-<span class="s">  </span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(qname, O_WRONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  </span>
-<span class="s">  char *buf = malloc(attr.mq_msgsize);</span>
-<span class="s">  size_t n;</span>
-<span class="s">  CHECK_GTE0(n = fread(buf, 1, attr.mq_msgsize, stdin));</span>
-<span class="s">  CHECK_GTE0(mq_send(q, buf, n, priority));</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>...and use it to write a message to the queue:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">Hello message queue</span>
-<span class="s">Second line</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Examining the queue, we can see that there's a message there:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">weak_ref</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">thread</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="n">m</span>::<span class="n">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">worker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">thread</span>::<span class="n">spawn</span><span class="p">(</span><span class="k">move</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">get_process</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">p</span><span class="p">.</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
@@ -1597,43 +1771,16 @@ curmsgs: 0
     <div class="prompt"></div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:32         NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 1
-</pre>
+<div class="output_subarea output_text output_error">
+<pre>
+    let worker = thread::spawn(move || {
+<span class="ansi-red-intense-fg">                 ^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">`std::rc::Rc&lt;weak_ref::Host&gt;` cannot be sent between threads safely</span>
+    let worker = thread::spawn(move || {
+        let p = h.get_process(0);
+        p.run();
+    });
+<span class="ansi-red-intense-fg">                               </span> <span class="ansi-blue-intense-fg">within this `[closure@src/lib.rs:291:32: 294:6 h:std::rc::Rc&lt;weak_ref::Host&gt;]`</span>
+`std::rc::Rc&lt;weak_ref::Host&gt;` cannot be sent between threads safely</pre>
 </div>
 </div>
 
@@ -1644,331 +1791,8 @@ curmsgs: 1
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Reading-from-the-queue">Reading from the queue<a class="anchor-link" href="#Reading-from-the-queue">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Again, we'll need to write a program to read from the queue. This one will just cat the first message in the queue to <code>stdout</code>, blocking if there isn't a message there yet:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>compile mq_recv <span class="s">&lt;&lt;EOF</span>
-<span class="s">$C_PRELIMINARIES</span>
-
-<span class="s">int main(int argc, char **argv) {</span>
-<span class="s">  mqd_t q;</span>
-<span class="s">  CHECK_GTE0(q = mq_open(argv[1], O_RDONLY));</span>
-<span class="s">  struct mq_attr attr;</span>
-<span class="s">  CHECK_EQ0(mq_getattr(q, &amp;attr));</span>
-<span class="s">  </span>
-<span class="s">  char *buf = malloc(attr.mq_msgsize);</span>
-<span class="s">  ssize_t n;</span>
-<span class="s">  CHECK_GTE0(n = mq_receive(q, buf, attr.mq_msgsize, NULL));</span>
-<span class="s">  CHECK_GTE0(fwrite(buf, 1, n, stdout));</span>
-<span class="s">}</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>As expected, we can read out the message we wrote to the queue above:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Hello message queue
-Second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>...and doing so returns the queue to its empty state:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>cat <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>QSIZE:0          NOTIFY:0     SIGNO:0     NOTIFY_PID:0     
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_getattr <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>flags: 0
-maxmsg: 10
-msgsize: 8192
-curmsgs: 0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Multiple-messages">Multiple messages<a class="anchor-link" href="#Multiple-messages">&#182;</a></h2>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can write two messages to the queue and get them back individually:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">First message first line</span>
-<span class="s">First message second line</span>
-<span class="s">EOF</span>
-./mq_send <span class="nv">$QNAME</span> <span class="m">0</span> <span class="s">&lt;&lt;EOF</span>
-<span class="s">Second message first line</span>
-<span class="s">Second message second line</span>
-<span class="s">EOF</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>First message first line
-First message second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Second message first line
-Second message second line
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We can use priorities to get them back in a different order. We didn't talk about priorities earlier, but that's the integer passed on the command-line after the queue name. When reading from a queue, the earliest message with the highest priority is returned:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">echo</span> <span class="s2">&quot;First message, priority 0&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">0</span>
-<span class="nb">echo</span> <span class="s2">&quot;Second message, priority 0&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">0</span>
-<span class="nb">echo</span> <span class="s2">&quot;Third message, priority 1&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">1</span>
-<span class="nb">echo</span> <span class="s2">&quot;Fourth message, priority 1&quot;</span> <span class="p">|</span> ./mq_send <span class="nv">$QNAME</span> <span class="m">1</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-./mq_recv <span class="nv">$QNAME</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>Third message, priority 1
-Fourth message, priority 1
-First message, priority 0
-Second message, priority 0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Resource-usage-and-cleanup">Resource usage and cleanup<a class="anchor-link" href="#Resource-usage-and-cleanup">&#182;</a></h2><p>There are system-wide and per-user limits on message queues, and these are surprisingly small by default. Let's go ahead and clean up our queue from above:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>rm <span class="nv">$QFILE</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>While writing this I inadvertently bumped into the per-user limit when I was unable to create a 10th queue:</p>
+<p>We could simply replace these with their thread-safe counterparts <code>Arc</code> and <code>Mutex</code>, but that would introduce a fair amount of locking overhead, which shouldn't be necessary given that the whole object graph conceptually only belongs to a single thread at once.</p>
+<p>Unfortunately, with this design its difficult to prove to the Rust compiler that the whole object graph is transferred from one thread to another -- that there aren't any lingering references. We could circumvent Rust's thread-safety checks by using <code>unsafe</code> to "smuggle" a <code>Host</code> across threads as a raw pointer. This should be safe as long as we don't accidentally hang onto any references to the graph's internals, nor the graph stores references to any unlocked data structures that don't conceptually belong to that <code>Host</code>.</p>
 
 </div>
 </div>
@@ -1978,8 +1802,30 @@ Second message, priority 0
 <div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="k">for</span> i in <span class="o">{</span><span class="m">1</span>..10<span class="o">}</span><span class="p">;</span> <span class="k">do</span> touch /dev/mqueue/exhaust<span class="si">${</span><span class="nv">i</span><span class="si">}</span><span class="p">;</span> <span class="k">done</span>
-<span class="nb">true</span> <span class="c1"># Suppress error</span>
+<div class=" highlight hl-Rust"><pre><span></span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">weak_ref</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">rc</span>::<span class="n">Rc</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">thread</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">new</span><span class="p">(</span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="n">m</span>::<span class="n">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="c1">// Smuggle the host into the worker thread as a pointer, disguised as an integer.</span>
+<span class="w">    </span><span class="c1">// I *think* this is safe as long as graph of objects reachable from the host really</span>
+<span class="w">    </span><span class="c1">// is partitioned from all other objects. e.g. Rust wouldn&#39;t know to stop us here if</span>
+<span class="w">    </span><span class="c1">// we continued to hold another Rc to the host or its internals, but accessing those</span>
+<span class="w">    </span><span class="c1">// objects before we smuggle ownership of the host back to this scope would be undefined behavior.</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">host_ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">into_raw</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="kt">usize</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">worker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">thread</span>::<span class="n">spawn</span><span class="p">(</span><span class="k">move</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">unsafe</span><span class="w"> </span><span class="p">{</span><span class="w"> </span>
+<span class="w">            </span><span class="n">Rc</span>::<span class="n">from_raw</span><span class="p">(</span><span class="n">host_ptr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">};</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">get_process</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">p</span><span class="p">.</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Smuggle the host back to the scheduler.</span>
+<span class="w">        </span><span class="n">Rc</span>::<span class="n">into_raw</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="kt">usize</span><span class="w"></span>
+<span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">unsafe</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Rc</span>::<span class="n">from_raw</span><span class="p">(</span><span class="n">worker</span><span class="p">.</span><span class="n">join</span><span class="p">().</span><span class="n">unwrap</span><span class="p">()</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span><span class="p">)</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
@@ -1996,8 +1842,97 @@ Second message, priority 0
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>touch: cannot touch &#39;/dev/mqueue/exhaust10&#39;: Too many open files
+<pre>Process method, accessing Host. Host&#39;s next_pid: 1
+Dropped host!
 </pre>
+</div>
+</div>
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[23]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>()</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The above approach is probably workable, but gives up some of Rust's safety. It's pretty much the model of how safety is maintained in the current C code, and it mostly works, but going with this model puts a damper on taking advantage of Rust's "fearless concurrency".</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Passing-the-graph-around-explicitly">Passing the graph around explicitly<a class="anchor-link" href="#Passing-the-graph-around-explicitly">&#182;</a></h2><p>Instead of objects storing references to other parts of the object graph, we could pass them in as method parameters when appropriate. e.g. since the <code>Host</code> should be the root of the graph that any of these need to access, we could pass it around to most methods, and in the objects themselves only store identifiers that can be used to look up parts of the graph as needed (e.g. <code>pid</code>s, <code>tid</code>'s, etc).</p>
+<p>Note though that from a <code>Host</code> method, we can't pass a mutable reference to the <code>Host</code> itself to a method on one of the child object it owns, since that'd invalidate the reference to the child:</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">passing_mutable_graph_root</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">Process</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">run_processes</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">_pid</span><span class="p">,</span><span class="w"> </span><span class="n">process</span><span class="p">)</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">iter</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="n">process</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="bp">self</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">run</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">_host</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="nc">mut</span><span class="w"> </span><span class="n">Host</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+                process.run(self);
+<span class="ansi-red-intense-fg">                ^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">mutable borrow occurs here</span>
+            for (_pid, process) in self.processes.iter() {
+<span class="ansi-red-intense-fg">                                   ^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">immutable borrow occurs here</span>
+            for (_pid, process) in self.processes.iter() {
+<span class="ansi-red-intense-fg">                                   ^^^^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">immutable borrow later used here</span>
+cannot borrow `*self` as mutable because it is also borrowed as immutable</pre>
 </div>
 </div>
 
@@ -2008,17 +1943,174 @@ Second message, priority 0
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>I believe the limit we're hitting is the per-user limit on message queues in bytes:</p>
+<p>So, we'd still need to pass around <em>immutable</em> references and use <code>RefCell</code> or similar to implement internal mutability.</p>
+<p>Since we're not using <code>Rc</code> wrappers though, the <code>Host</code> doesn't actually have a way to return a reference to other objects it owns. Here's a failed attempt:</p>
 
 </div>
 </div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span><span class="nb">ulimit</span> -a <span class="p">|</span> grep POSIX
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">passing_immutable_graph_root</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="p">{</span><span class="n">Ref</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span><span class="p">};</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="kt">i32</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">get_process</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="o">&gt;</span><span class="p">(</span><span class="o">&amp;</span><span class="na">&#39;a</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Ref</span><span class="o">&lt;</span><span class="na">&#39;a</span><span class="p">,</span><span class="w"> </span><span class="n">Process</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow</span><span class="p">().</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pid</span><span class="p">).</span><span class="n">unwrap</span><span class="p">().</span><span class="n">borrow</span><span class="p">()</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="bp">self</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="o">*</span><span class="n">processes</span><span class="p">).</span><span class="n">insert</span><span class="p">(</span><span class="o">*</span><span class="n">next_pid</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="o">*</span><span class="n">next_pid</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="o">*</span><span class="n">next_pid</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">pid</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">run</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">host</span>: <span class="kp">&amp;</span><span class="nc">Host</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Process method, accessing Host. Host&#39;s next_pid: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">host</span><span class="p">.</span><span class="n">next_pid</span><span class="p">.</span><span class="n">borrow</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">passing_immutable_graph_root</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span>::<span class="n">Host</span>::<span class="n">new</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="n">h</span><span class="p">.</span><span class="n">spawn_process</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">.</span><span class="n">get_process</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">p</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="o">&amp;</span><span class="n">h</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+    <div class="prompt"></div>
+
+
+<div class="output_subarea output_text output_error">
+<pre>
+            self.processes.borrow().get(&amp;pid).unwrap().borrow()
+<span class="ansi-red-intense-fg">            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">returns a value referencing data owned by the current function</span>
+            self.processes.borrow().get(&amp;pid).unwrap().borrow()
+<span class="ansi-red-intense-fg">            ^^^^^^^^^^^^^^^^^^^^^^^</span> <span class="ansi-blue-intense-fg">temporary value created here</span>
+cannot return value referencing temporary value</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Using-arenas">Using arenas<a class="anchor-link" href="#Using-arenas">&#182;</a></h2><p>The problem above is due to nested ownership. Since processes are nested under the host, we can't borrow a single process without also borrowing the host to which it belongs.</p>
+<p>We can get it working by flattening out ownership, passing around a "dumb" arena object rather than the <code>Host</code> itself. This lets us do most/all of the <code>RefCell</code> manipulation when borrowing individual objects from the arena. As expected, we can safely transfer the arena between threads.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-Rust"><pre><span></span><span class="k">mod</span> <span class="nn">passing_arena</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">collections</span>::<span class="n">HashMap</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">cell</span>::<span class="p">{</span><span class="n">Ref</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span><span class="p">};</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">HostArena</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="n">host</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">Host</span><span class="o">&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span><span class="o">&lt;</span><span class="n">HashMap</span><span class="o">&lt;</span><span class="kt">i32</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span><span class="o">&lt;</span><span class="n">Process</span><span class="o">&gt;&gt;&gt;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">HostArena</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Self</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="bp">Self</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">host</span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">Host</span>::<span class="n">new</span><span class="p">()),</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span>: <span class="nc">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">HashMap</span>::<span class="n">new</span><span class="p">())}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Notice that internals of Host no longer necessarily need to be wrapped in RefCell,</span>
+<span class="w">        </span><span class="c1">// since the host itself is wrapped in a RefCell.</span>
+<span class="w">        </span><span class="n">next_pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">new</span><span class="p">()</span><span class="w"> </span>-&gt; <span class="nc">Host</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Host</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">next_pid</span><span class="w"> </span>: <span class="mi">0</span><span class="w"> </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="k">mut</span><span class="w"> </span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">host_arena</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="nc">HostArena</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">host_arena</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="o">*</span><span class="n">processes</span><span class="p">).</span><span class="n">insert</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">,</span><span class="w"> </span><span class="n">RefCell</span>::<span class="n">new</span><span class="p">(</span><span class="n">Process</span>::<span class="n">new</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">)));</span><span class="w"></span>
+<span class="w">            </span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">next_pid</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">pub</span><span class="w"> </span><span class="k">struct</span> <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="k">impl</span><span class="w"> </span><span class="n">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">fn</span> <span class="nf">new</span><span class="p">(</span><span class="n">pid</span><span class="w"> </span>: <span class="kt">i32</span><span class="p">)</span><span class="w"> </span>-&gt; <span class="nc">Process</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">Process</span><span class="p">{</span><span class="n">pid</span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">pub</span><span class="w"> </span><span class="k">fn</span> <span class="nf">run</span><span class="p">(</span><span class="o">&amp;</span><span class="bp">self</span><span class="p">,</span><span class="w"> </span><span class="n">host_arena</span><span class="w"> </span>: <span class="kp">&amp;</span><span class="nc">HostArena</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">&quot;Process method, accessing Host. Host&#39;s next_pid: {}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">host_arena</span><span class="p">.</span><span class="n">host</span><span class="p">.</span><span class="n">borrow</span><span class="p">().</span><span class="n">next_pid</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">std</span>::<span class="n">thread</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">// Set up the host arena with one process on one thread...</span>
+<span class="w">    </span><span class="k">use</span><span class="w"> </span><span class="n">passing_arena</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">m</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">host_arena</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span>::<span class="n">HostArena</span>::<span class="n">new</span><span class="p">();</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Limit the scope of the mutable borrow.</span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="k">mut</span><span class="w"> </span><span class="n">host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">host_arena</span><span class="p">.</span><span class="n">host</span><span class="p">.</span><span class="n">borrow_mut</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">host</span><span class="p">.</span><span class="n">spawn_process</span><span class="p">(</span><span class="o">&amp;</span><span class="n">host_arena</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="c1">// Move the arena into a worker thread and run it there.</span>
+<span class="w">    </span><span class="c1">// Since we&#39;re no longer using Rc, the arena is `Send`</span>
+<span class="w">    </span><span class="c1">// (can be safely transferred between threads).</span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">worker</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">thread</span>::<span class="n">spawn</span><span class="p">(</span><span class="k">move</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="kd">let</span><span class="w"> </span><span class="n">processes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">host_arena</span><span class="p">.</span><span class="n">processes</span><span class="p">.</span><span class="n">borrow</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="n">processes</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="o">&amp;</span><span class="mi">0</span><span class="p">).</span><span class="n">unwrap</span><span class="p">().</span><span class="n">borrow</span><span class="p">().</span><span class="n">run</span><span class="p">(</span><span class="o">&amp;</span><span class="n">host_arena</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">});</span><span class="w"></span>
+<span class="w">    </span><span class="n">worker</span><span class="p">.</span><span class="n">join</span><span class="p">();</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
 </pre></div>
 
     </div>
@@ -2035,9 +2127,22 @@ Second message, priority 0
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>POSIX message queues     (bytes, -q) 819200
+<pre>Process method, accessing Host. Host&#39;s next_pid: 1
 </pre>
 </div>
+</div>
+
+<div class="output_area">
+
+    <div class="prompt output_prompt">Out[6]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>()</pre>
+</div>
+
 </div>
 
 </div>
@@ -2047,25 +2152,17 @@ Second message, priority 0
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As we saw from the <code>mq_getattr</code> output above, each queue has <code>msgsize</code> of <code>8192</code>, and <code>maxmsg</code> of <code>10</code>. Therefore <code>10</code> queues would equal the <code>819200</code> limit. Apparently the limit is applied to the <em>potential</em> size of the queue. This is probably preferable over being able to create more queues and then hitting the resource limit when trying to write to them.</p>
-<p>It does seem likely that these parametes were chosen with the intent of allowing <code>10</code> queues per user, but that either the limit is being applied with <code>&lt;</code> rather than <code>&lt;=</code>, or that there's some other per-queue overhead is also being counted.</p>
-<p>In any case, let's clean up.</p>
+<h2 id="Dealing-with-mutation-cycles-(e.g.-fork)">Dealing with mutation cycles (e.g. fork)<a class="anchor-link" href="#Dealing-with-mutation-cycles-(e.g.-fork)">&#182;</a></h2><p>This gives us the start of a workable model. We'll still need to be careful to avoid patterns of circular mutable borrows, which will result in <code>panic</code>s. Such cycles could represent real bugs though, and such <code>panic</code>s are preferable to the more subtle problems that might arise in corresponding C code.</p>
+<p>One clear problem we'll run into is when the execution of a <code>Process</code> wants to call <code>fork</code> - i.e., create another process on the host (ht @ <a href="https://github.com/stevenengler">stevenengler</a> for spotting this). We have a few ideas for breaking the cycle in such cases:</p>
+<ul>
+<li>Have the return-type of <code>Process::execute</code> be an <code>Enum</code> message to the parent <code>Host</code> which can request that the <code>Host</code> performs some action, such as adding a provided <code>Process</code> object to the <code>HostArena</code>, and then calls <code>execute</code> again to continue.</li>
+<li>Have <code>Process::execute</code> push the new process and/or a callback onto an event queue to be handled later.</li>
+<li>Instead of <code>HostArena</code> providing direct access to <code>HashMap</code>s of objects, create (or find) an abstraction that could keep lists of pending additions and deletions. It could provide an api like <code>fn run_with&lt;F: CallOnce&gt;(&amp;self, id: i32, f : F)</code> that borrows the internal <code>HashMap</code>, borrows the object (checking for relevant pending insertions or deletions), runs the function, and then performs the pending operations if there are no other outstanding borrows. Likewise it could provide <code>insert</code> and <code>delete</code> operations that push to the corresponding operation lists if the main <code>HashMap</code> is currently borrowed.</li>
+</ul>
+<p>We're still thinking if there are other approaches we could take, including other ways we can tweak Shadow's design to fit better into Rust's ownership model. Happy to hear ideas :)</p>
 
 </div>
 </div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-bash"><pre><span></span>rm /dev/mqueue/exhaust*
-</pre></div>
-
-    </div>
-</div>
-</div>
-
 </div>
  
 
@@ -2104,6 +2201,54 @@ Second message, priority 0
                     <h1>Other articles</h1>
                     <hr />
                     <ol id="posts-list" class="hfeed">
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://www.jimnewsome.net/posts/pelican-preserving-mtimes/" rel="bookmark"
+                           title="Permalink to Preserving mtimes in Pelican">Preserving mtimes in Pelican</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2020-05-24T00:00:00-05:00">
+                Published: Sun 24 May 2020
+        </abbr>
+
+<p>In <a href="https://www.jimnewsome.net/category/posts.html">posts</a>.</p>
+
+</footer><!-- /.post-info -->                <p>With <a href="https://blog.getpelican.com/">Pelican</a>, and probably other
+static site generators, rebuilding the site regenerates every output
+file.</p>
+<p>That sets their mtime (modification time) to the current time.</p>
+<p>That means when deploying to the server with rsync, rsync's heuristic of
+comparing sizes and mtimes detects that every file has changed. Delta
+compression means …</p>
+                <a class="readmore" href="https://www.jimnewsome.net/posts/pelican-preserving-mtimes/">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
+
+            <li><article class="hentry">
+                <header>
+                    <h1><a href="https://www.jimnewsome.net/posts/posix-message-queues/" rel="bookmark"
+                           title="Permalink to Poking around at POSIX message queues in Linux">Poking around at POSIX message queues in Linux</a></h1>
+                </header>
+
+                <div class="entry-content">
+<footer class="post-info">
+        <abbr class="published" title="2020-05-10T00:00:00-05:00">
+                Published: Sun 10 May 2020
+        </abbr>
+
+<p>In <a href="https://www.jimnewsome.net/category/posts.html">posts</a>.</p>
+
+</footer><!-- /.post-info -->                <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>I was recently reviewing some code introduced usage of POSIX message queues into some tests. I hadn't used them before, and nothing in the code base already used them, so I needed to familiarize myself with them a bit.</p>
+<p>One annoyance of working with POSIX message queues on Linux is that there doesn't seem to be a ubiquitous command-line tool for manipulating them. Their predecessor, sys v message queues, have <a href="https://linux.die.net/man/1/ipcmk"><code>ipcmk</code>
+                <a class="readmore" href="https://www.jimnewsome.net/posts/posix-message-queues/">read more</a>
+                </div><!-- /.entry-content -->
+            </article></li>
 
             <li><article class="hentry">
                 <header>
